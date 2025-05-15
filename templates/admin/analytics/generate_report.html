@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Создание отчета - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-3 px-5">
+            <h2 class="text-xl font-bold">Создание отчета</h2>
+        </div>
+        
+        <div class="p-4">
+            <form method="POST" action="{{ url_for('analytics.generate_report') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">Параметры отчета</h3>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 text-sm font-semibold mb-1">
+                                Тип отчета
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="report_type" value="summary" class="mr-1" checked>
+                                    <span class="text-sm">Сводный отчет</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="report_type" value="detailed" class="mr-1">
+                                    <span class="text-sm">Детальный отчет</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 text-sm font-semibold mb-1">
+                                Данные для отчета
+                            </label>
+                            <div class="grid grid-cols-1 gap-1">
+                                <label class="flex items-center">
+                                    <input type="radio" name="data_type" value="workout_popularity" class="mr-1" checked>
+                                    <span class="text-sm">Популярность тренировок</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="data_type" value="trainer_workload" class="mr-1">
+                                    <span class="text-sm">Загруженность тренеров</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="data_type" value="attendance" class="mr-1">
+                                    <span class="text-sm">Посещаемость</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 text-sm font-semibold mb-1">
+                                Формат отчета
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="format_type" value="pdf" class="mr-1" checked>
+                                    <span class="text-sm">PDF</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="format_type" value="excel" class="mr-1">
+                                    <span class="text-sm">Excel</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">Период отчета</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label for="start_date" class="block text-gray-700 text-sm font-semibold mb-1">
+                                    Начало периода
+                                </label>
+                                <input type="date" name="start_date" id="start_date" required
+                                    class="shadow border rounded w-full py-1 px-2 text-sm text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value="{{ (now() - timedelta(days=30)).strftime('%Y-%m-%d') }}">
+                            </div>
+                            
+                            <div>
+                                <label for="end_date" class="block text-gray-700 text-sm font-semibold mb-1">
+                                    Конец периода
+                                </label>
+                                <input type="date" name="end_date" id="end_date" required
+                                    class="shadow border rounded w-full py-1 px-2 text-sm text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value="{{ now().strftime('%Y-%m-%d') }}">
+                            </div>
+                        </div>
+                        
+                        <div class="text-xs text-gray-600 mt-3 p-2 bg-gray-50 rounded">
+                            <p class="font-semibold mb-1">Примечания:</p>
+                            <ul class="list-disc pl-4 space-y-0">
+                                <li>Сводный отчет содержит общую статистику за период</li>
+                                <li>Детальный отчет содержит подробную информацию по дням</li>
+                                <li>Максимальный период для детального отчета - 90 дней</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center mt-4">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded focus:outline-none focus:shadow-outline text-sm">
+                        Создать отчет
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('analytics.analytics_dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                    &larr; Вернуться к аналитике
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверка валидности дат при отправке формы
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var startDate = new Date(document.getElementById('start_date').value);
+            var endDate = new Date(document.getElementById('end_date').value);
+            var reportType = document.querySelector('input[name="report_type"]:checked').value;
+            
+            if (endDate < startDate) {
+                e.preventDefault();
+                alert('Дата окончания не может быть раньше даты начала');
+                return;
+            }
+            
+            // Проверка максимального периода для детального отчета
+            if (reportType === 'detailed') {
+                var diffTime = Math.abs(endDate - startDate);
+                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays > 90) {
+                    e.preventDefault();
+                    alert('Максимальный период для детального отчета - 90 дней');
+                    return;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

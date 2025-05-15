@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6">
+            <h2 class="text-2xl font-bold">{{ title }}</h2>
+        </div>
+        
+        <div class="p-6">
+            <form method="POST" action="{{ request.url }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-4">
+                    <label for="{{ form.trainer_id.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.trainer_id.label }}
+                    </label>
+                    {{ form.trainer_id(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.trainer_id.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.trainer_id.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.workout_type_id.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.workout_type_id.label }}
+                    </label>
+                    {{ form.workout_type_id(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.workout_type_id.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.workout_type_id.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="{{ form.start_time.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                            {{ form.start_time.label }}
+                        </label>
+                        {{ form.start_time(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", type="datetime-local") }}
+                        {% if form.start_time.errors %}
+                            <div class="text-red-500 text-xs mt-1">
+                                {% for error in form.start_time.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.end_time.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                            {{ form.end_time.label }}
+                        </label>
+                        {{ form.end_time(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", type="datetime-local") }}
+                        {% if form.end_time.errors %}
+                            <div class="text-red-500 text-xs mt-1">
+                                {% for error in form.end_time.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.max_participants.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.max_participants.label }}
+                    </label>
+                    {{ form.max_participants(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.max_participants.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.max_participants.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    <label for="{{ form.description.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.description.label }}
+                    </label>
+                    {{ form.description(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", rows=3) }}
+                    {% if form.description.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.description.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+                    
+                    <a href="{{ url_for('admin.admin_workouts') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
+                        Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

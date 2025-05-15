@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6">
+            <h2 class="text-2xl font-bold">Вход в систему</h2>
+        </div>
+        
+        <div class="p-6">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-4">
+                    <label for="{{ form.email.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.email.label }}
+                    </label>
+                    {{ form.email(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.email.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.email.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    <label for="{{ form.password.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.password.label }}
+                    </label>
+                    {{ form.password(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.password.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.password.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        {{ form.remember_me(class="mr-2") }}
+                        <span class="text-gray-700">{{ form.remember_me.label }}</span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+                    
+                    <a href="{{ url_for('auth.register') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
+                        Нет аккаунта? Зарегистрируйтесь
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

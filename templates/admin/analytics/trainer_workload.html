@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}Загруженность тренеров - Fitness Gym{% endblock %}
+
+{% block extra_head %}
+    <!-- Chart.js для визуализации данных -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-3 px-5">
+            <h2 class="text-xl font-bold">Загруженность тренеров</h2>
+        </div>
+        
+        <div class="p-4">
+            <!-- Выбор периода анализа -->
+            <div class="mb-4">
+                <form action="{{ url_for('analytics.trainer_workload') }}" method="get" class="flex flex-wrap items-end space-x-2 gap-y-2">
+                    <div>
+                        <label for="month" class="block text-gray-700 text-sm font-semibold mb-1">
+                            Месяц
+                        </label>
+                        <select name="month" id="month" class="shadow border rounded py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:shadow-outline">
+                            {% for month_num, month_name in months %}
+                                <option value="{{ month_num }}" {% if selected_month == month_num %}selected{% endif %}>{{ month_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="year" class="block text-gray-700 text-sm font-semibold mb-1">
+                            Год
+                        </label>
+                        <select name="year" id="year" class="shadow border rounded py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:shadow-outline">
+                            {% for year_option in range(2020, now().year + 1) %}
+                                <option value="{{ year_option }}" {% if selected_year == year_option %}selected{% endif %}>{{ year_option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded text-sm focus:outline-none focus:shadow-outline">
+                        Применить
+                    </button>
+                </form>
+            </div>
+            
+            <!-- График и таблица в две колонки -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- График загруженности тренеров -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">График загруженности ({{ current_month_name }} {{ selected_year }})</h3>
+                    
+                    <div class="bg-white p-2 border rounded-lg">
+                        <canvas id="trainerWorkloadChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Таблица с данными -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Данные о загруженности</h3>
+                    
+                    <div class="overflow-x-auto" style="max-height: 250px;">
+                        <table class="min-w-full bg-white border border-gray-200 rounded-lg text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-2 px-3 text-left">Тренер</th>
+                                    <th class="py-2 px-3 text-center">Общее кол-во часов</th>
+                                    <th class="py-2 px-3 text-center">Сред. нагрузка в день</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for first_name, last_name, total_hours in trainer_stats %}
+                                    <tr class="border-t hover:bg-gray-50">
+                                        <td class="py-1 px-3">{{ first_name }} {{ last_name }}</td>
+                                        <td class="py-1 px-3 text-center">{{ '%0.1f'|format(total_hours|float) }}</td>
+                                        {% set days_in_month = range(1, 32)|list|length %}
+                                        <td class="py-1 px-3 text-center">{{ '%0.1f'|format((total_hours|float) / days_in_month) }}</td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="py-2 px-3 text-center text-gray-500">Нет данных для отображения</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('analytics.analytics_dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                    &larr; Вернуться к аналитике
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Получаем данные для графика
+        var trainerLabels = [];
+        var trainerData = [];
+        
+        {% for first_name, last_name, total_hours in trainer_stats %}
+            trainerLabels.push("{{ first_name }} {{ last_name }}");
+            trainerData.push({{ total_hours|float }});
+        {% endfor %}
+        
+        // Создаем график
+        var ctx = document.getElementById('trainerWorkloadChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: trainerLabels,
+                datasets: [{
+                    label: 'Количество часов',
+                    data: trainerData,
+                    backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Часы',
+                            font: {
+                                size: 10
+                            }
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Загруженность тренеров (часы)',
+                        font: {
+                            size: 14
+                        },
+                        padding: {
+                            top: 5,
+                            bottom: 5
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

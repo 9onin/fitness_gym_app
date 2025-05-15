@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление тренировками - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6 flex justify-between items-center">
+            <h2 class="text-2xl font-bold">Управление тренировками</h2>
+            <a href="{{ url_for('admin.new_workout') }}" class="bg-white text-indigo-700 px-4 py-2 rounded font-semibold hover:bg-indigo-100">
+                Добавить тренировку
+            </a>
+        </div>
+        
+        <div class="p-6">
+            <!-- Фильтр -->
+            <div class="mb-6 flex justify-between items-center">
+                <div>
+                    <a href="{{ url_for('admin.admin_workouts', filter='upcoming') }}" 
+                       class="px-4 py-2 rounded mr-2 {% if filter_type == 'upcoming' %}bg-indigo-600 text-white{% else %}bg-gray-200 hover:bg-gray-300 text-gray-700{% endif %}">
+                        Предстоящие
+                    </a>
+                    <a href="{{ url_for('admin.admin_workouts', filter='past') }}" 
+                       class="px-4 py-2 rounded {% if filter_type == 'past' %}bg-indigo-600 text-white{% else %}bg-gray-200 hover:bg-gray-300 text-gray-700{% endif %}">
+                        Прошедшие
+                    </a>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-4 text-left">Дата и время</th>
+                            <th class="py-3 px-4 text-left">Тип тренировки</th>
+                            <th class="py-3 px-4 text-left">Тренер</th>
+                            <th class="py-3 px-4 text-center">Участники</th>
+                            <th class="py-3 px-4 text-center">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for workout in workouts %}
+                            <tr class="border-t hover:bg-gray-50">
+                                <td class="py-3 px-4">
+                                    {{ workout.start_time.strftime('%d.%m.%Y') }}<br>
+                                    <span class="text-gray-500">{{ workout.start_time.strftime('%H:%M') }} - {{ workout.end_time.strftime('%H:%M') }}</span>
+                                </td>
+                                <td class="py-3 px-4">{{ workout.workout_type.name }}</td>
+                                <td class="py-3 px-4">{{ workout.trainer.first_name }} {{ workout.trainer.last_name }}</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="{% if workout.is_full %}text-red-500{% elif workout.available_spots <= 3 %}text-yellow-500{% else %}text-green-500{% endif %}">
+                                        {{ workout.max_participants - workout.available_spots }}/{{ workout.max_participants }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('admin.edit_workout', workout_id=workout.id) }}" 
+                                           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                            Редактировать
+                                        </a>
+                                        
+                                        <form action="{{ url_for('admin.delete_workout', workout_id=workout.id) }}" method="post" class="inline" onsubmit="return confirm('Вы уверены, что хотите удалить эту тренировку?');">
+                                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                                Удалить
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="py-4 px-4 text-center text-gray-500">
+                                    {% if filter_type == 'upcoming' %}
+                                        Нет предстоящих тренировок
+                                    {% else %}
+                                        Нет прошедших тренировок
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <a href="{{ url_for('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
+                    &larr; Вернуться к панели администратора
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

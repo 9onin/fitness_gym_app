@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Популярность тренировок - Fitness Gym{% endblock %}
+
+{% block extra_head %}
+    <!-- Chart.js для визуализации данных -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-3 px-5">
+            <h2 class="text-xl font-bold">Популярность тренировок</h2>
+        </div>
+        
+        <div class="p-4">
+            <!-- Выбор периода анализа -->
+            <div class="mb-4">
+                <form action="{{ url_for('analytics.workout_popularity') }}" method="get" class="flex items-end space-x-4">
+                    <div>
+                        <label for="days" class="block text-gray-700 text-sm font-semibold mb-1">
+                            Период анализа
+                        </label>
+                        <select name="days" id="days" class="shadow border rounded py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="7" {% if days == 7 %}selected{% endif %}>Последние 7 дней</option>
+                            <option value="30" {% if days == 30 %}selected{% endif %}>Последние 30 дней</option>
+                            <option value="90" {% if days == 90 %}selected{% endif %}>Последние 90 дней</option>
+                            <option value="180" {% if days == 180 %}selected{% endif %}>Последние 180 дней</option>
+                            <option value="365" {% if days == 365 %}selected{% endif %}>Последний год</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded text-sm focus:outline-none focus:shadow-outline">
+                        Применить
+                    </button>
+                </form>
+            </div>
+            
+            <!-- График и таблица в две колонки -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- График популярности тренировок -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">График популярности</h3>
+                    
+                    <div class="bg-white p-2 border rounded-lg">
+                        <canvas id="workoutPopularityChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Таблица с данными -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Данные о популярности</h3>
+                    
+                    <div class="overflow-x-auto" style="max-height: 250px;">
+                        <table class="min-w-full bg-white border border-gray-200 rounded-lg text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-2 px-3 text-left">Тип тренировки</th>
+                                    <th class="py-2 px-3 text-center">Кол-во записей</th>
+                                    <th class="py-2 px-3 text-center">Популярность</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total_bookings = workout_type_stats|sum(attribute='1') %}
+                                {% for type_name, booking_count in workout_type_stats %}
+                                    <tr class="border-t hover:bg-gray-50">
+                                        <td class="py-1 px-3">{{ type_name }}</td>
+                                        <td class="py-1 px-3 text-center">{{ booking_count }}</td>
+                                        <td class="py-1 px-3 text-center">
+                                            {% if total_bookings > 0 %}
+                                                {{ '%0.1f' % ((booking_count / total_bookings) * 100) }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="py-2 px-3 text-center text-gray-500">Нет данных для отображения</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('analytics.analytics_dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                    &larr; Вернуться к аналитике
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Получаем данные для графика
+    const labels = {{ workout_type_stats|map(attribute=0)|list|tojson }};
+    const data = {{ workout_type_stats|map(attribute=1)|list|tojson }};
+    
+    // Создаем график
+    const ctx = document.getElementById('workoutPopularityChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Количество записей',
+                data: data,
+                backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Популярность типов тренировок',
+                    font: {
+                        size: 14
+                    },
+                    padding: {
+                        top: 5,
+                        bottom: 5
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

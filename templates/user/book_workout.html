@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Запись на тренировку - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6">
+            <h2 class="text-2xl font-bold">Запись на тренировку</h2>
+        </div>
+        
+        <div class="p-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">Информация о тренировке</h3>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Дата:</p>
+                        <p>{{ workout.start_time.strftime('%d.%m.%Y') }}</p>
+                    </div>
+                    
+                    <div>
+                        <p class="text-gray-500 text-sm">Время:</p>
+                        <p>{{ workout.start_time.strftime('%H:%M') }} - {{ workout.end_time.strftime('%H:%M') }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-gray-500 text-sm">Тип тренировки:</p>
+                    <p>{{ workout.workout_type.name }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-gray-500 text-sm">Тренер:</p>
+                    <p>{{ workout.trainer.first_name }} {{ workout.trainer.last_name }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-gray-500 text-sm">Доступные места:</p>
+                    <p class="{% if workout.is_full %}text-red-500{% elif workout.available_spots <= 3 %}text-yellow-500{% else %}text-green-500{% endif %}">
+                        {{ workout.available_spots }} / {{ workout.max_participants }}
+                    </p>
+                </div>
+                
+                {% if workout.description %}
+                    <div class="mb-4">
+                        <p class="text-gray-500 text-sm">Описание:</p>
+                        <p>{{ workout.description }}</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="border-t pt-6">
+                <form method="POST" action="{{ url_for('user.book_workout', workout_id=workout.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="flex items-center justify-between">
+                        {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+                        
+                        <a href="{{ url_for('user.workouts') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

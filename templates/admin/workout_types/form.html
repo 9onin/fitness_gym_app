@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6">
+            <h2 class="text-2xl font-bold">{{ title }}</h2>
+        </div>
+        
+        <div class="p-6">
+            <form method="POST" action="{{ request.url }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-4">
+                    <label for="{{ form.name.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.name.label }}
+                    </label>
+                    {{ form.name(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.name.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.name.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    <label for="{{ form.description.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.description.label }}
+                    </label>
+                    {{ form.description(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", rows=5) }}
+                    {% if form.description.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.description.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+                    
+                    <a href="{{ url_for('admin.workout_types') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
+                        Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

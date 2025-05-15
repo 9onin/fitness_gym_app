@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Типы тренировок - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6 flex justify-between items-center">
+            <h2 class="text-2xl font-bold">Типы тренировок</h2>
+            <a href="{{ url_for('admin.new_workout_type') }}" class="bg-white text-indigo-700 px-4 py-2 rounded font-semibold hover:bg-indigo-100">
+                Добавить тип
+            </a>
+        </div>
+        
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-4 text-left">Название</th>
+                            <th class="py-3 px-4 text-left">Описание</th>
+                            <th class="py-3 px-4 text-center">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for workout_type in workout_types %}
+                            <tr class="border-t hover:bg-gray-50">
+                                <td class="py-3 px-4 font-semibold">{{ workout_type.name }}</td>
+                                <td class="py-3 px-4">
+                                    {% if workout_type.description %}
+                                        {{ workout_type.description|truncate(100) }}
+                                    {% else %}
+                                        <span class="text-gray-400">Нет описания</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('admin.edit_workout_type', type_id=workout_type.id) }}" 
+                                           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                            Редактировать
+                                        </a>
+                                        
+                                        <form action="{{ url_for('admin.delete_workout_type', type_id=workout_type.id) }}" method="post" class="inline" onsubmit="return confirm('Вы уверены, что хотите удалить этот тип тренировки?');">
+                                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                                Удалить
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="py-4 px-4 text-center text-gray-500">Нет типов тренировок</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <a href="{{ url_for('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
+                    &larr; Вернуться к панели администратора
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

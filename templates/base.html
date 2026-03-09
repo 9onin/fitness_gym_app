@@ -32,6 +32,7 @@
                     {% if current_user.is_authenticated %}
                         <li><a href="{{ url_for('user.workouts') }}" class="hover:text-indigo-200">Тренировки</a></li>
                         <li><a href="{{ url_for('user.schedule') }}" class="hover:text-indigo-200">Мое расписание</a></li>
+                        <li><a href="{{ url_for('abonements.index') }}" class="hover:text-white">Абонементы</a></li>
                         
                         {% if current_user.is_admin %}
                             <li><a href="{{ url_for('admin.dashboard') }}" class="hover:text-indigo-200">Админ-панель</a></li>
@@ -95,6 +96,7 @@
                         {% if current_user.is_authenticated %}
                             <li><a href="{{ url_for('user.workouts') }}" class="hover:text-white">Тренировки</a></li>
                             <li><a href="{{ url_for('user.schedule') }}" class="hover:text-white">Мое расписание</a></li>
+                            <li><a href="{{ url_for('abonements.index') }}" class="hover:text-white">Абонементы</a></li>
                         {% else %}
                             <li><a href="{{ url_for('auth.login') }}" class="hover:text-white">Вход</a></li>
                             <li><a href="{{ url_for('auth.register') }}" class="hover:text-white">Регистрация</a></li>

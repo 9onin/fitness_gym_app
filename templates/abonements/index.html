@@ -1,0 +1,170 @@
+{% extends 'abonements/base.html' %}
+
+{% block title %}Наши абонементы - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <header class="header">
+            <h1>Выберите свой абонемент</h1>
+            <p class="subtitle">Начните свой путь к здоровому телу сегодня</p>
+        </header>
+
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterAbonements('all')">Все</button>
+            <button class="filter-btn" onclick="filterAbonements('trial')">Пробные</button>
+            <button class="filter-btn" onclick="filterAbonements('basic')">Базовые</button>
+            <button class="filter-btn" onclick="filterAbonements('vip')">VIP</button>
+        </div>
+
+        <div class="abonements-grid" id="abonements-grid">
+            {% for abonement in abonements %}
+            <div class="abonement-card" data-type="{{ abonement.type }}" style="border-top: 4px solid {{ abonement.color }}">
+                {% if abonement.is_popular %}
+                <div class="popular-badge">🔥 Самый популярный</div>
+                {% endif %}
+                
+                <div class="card-header">
+                    <h2>{{ abonement.name }}</h2>
+                    <p class="description">{{ abonement.description }}</p>
+                </div>
+                
+                <div class="price-section">
+                    {% if abonement.discount > 0 %}
+                    <div class="old-price">{{ abonement.price }} ₽</div>
+                    <div class="price">{{ abonement.final_price }} ₽</div>
+                    <div class="discount-badge">-{{ abonement.discount }}%</div>
+                    {% else %}
+                    <div class="price">{{ abonement.price }} ₽</div>
+                    {% endif %}
+                    <div class="duration">{{ abonement.duration_text }}</div>
+                </div>
+                
+                <div class="visits-info">
+                    <span class="visits-count">{{ abonement.visits_text }}</span>
+                    {% if abonement.price_per_visit > 0 %}
+                    <span class="price-per-visit">{{ abonement.price_per_visit }} ₽/тренировка</span>
+                    {% endif %}
+                </div>
+                
+                <div class="features">
+                    <h3>Включено:</h3>
+                    <ul>
+                        {% for feature in abonement.features %}
+                        <li>✓ {{ feature }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="card-footer">
+                    <a href="{{ url_for('abonements.abonement_detail', abonement_id=abonement.id) }}" class="btn-details">Подробнее</a>
+                    <button class="btn-buy" onclick="buyAbonement({{ abonement.id }})" 
+                            style="background-color: {{ abonement.color }}">Купить</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="comparison-link">
+            <a href="{{ url_for('abonements.compare_abonements') }}" class="btn-compare">Сравнить все абонементы</a>
+        </div>
+    </div>
+
+    <script>
+        // Фильтрация абонементов
+        async function filterAbonements(type) {
+            // Обновление активной кнопки
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Запрос к API
+            const response = await fetch('/filter', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({type: type})
+            });
+            
+            const abonements = await response.json();
+            updateAbonementsGrid(abonements);
+        }
+        
+        // Обновление сетки абонементов
+        function updateAbonementsGrid(abonements) {
+            const grid = document.getElementById('abonements-grid');
+            grid.innerHTML = '';
+            
+            abonements.forEach(abonement => {
+                const card = createAbonementCard(abonement);
+                grid.appendChild(card);
+            });
+        }
+        
+        // Создание карточки абонемента
+        function createAbonementCard(abonement) {
+            const card = document.createElement('div');
+            card.className = 'abonement-card';
+            card.style.borderTop = `4px solid ${abonement.color}`;
+            card.dataset.type = abonement.type;
+            
+            let popularBadge = '';
+            if (abonement.is_popular) {
+                popularBadge = '<div class="popular-badge">🔥 Самый популярный</div>';
+            }
+            
+            let priceHtml = '';
+            if (abonement.discount > 0) {
+                priceHtml = `
+                    <div class="old-price">${abonement.price} ₽</div>
+                    <div class="price">${abonement.final_price} ₽</div>
+                    <div class="discount-badge">-${abonement.discount}%</div>
+                `;
+            } else {
+                priceHtml = `<div class="price">${abonement.price} ₽</div>`;
+            }
+            
+            let perVisitHtml = '';
+            if (abonement.price_per_visit > 0) {
+                perVisitHtml = `<span class="price-per-visit">${abonement.price_per_visit} ₽/тренировка</span>`;
+            }
+            
+            let featuresHtml = '';
+            abonement.features.forEach(feature => {
+                featuresHtml += `<li>✓ ${feature}</li>`;
+            });
+            
+            card.innerHTML = `
+                ${popularBadge}
+                <div class="card-header">
+                    <h2>${abonement.name}</h2>
+                    <p class="description">${abonement.description}</p>
+                </div>
+                <div class="price-section">
+                    ${priceHtml}
+                    <div class="duration">${abonement.duration_text}</div>
+                </div>
+                <div class="visits-info">
+                    <span class="visits-count">${abonement.visits_text}</span>
+                    ${perVisitHtml}
+                </div>
+                <div class="features">
+                    <h3>Включено:</h3>
+                    <ul>${featuresHtml}</ul>
+                </div>
+                <div class="card-footer">
+                    <a href="/abonement/${abonement.id}" class="btn-details">Подробнее</a>
+                    <button class="btn-buy" onclick="buyAbonement(${abonement.id})" 
+                            style="background-color: ${abonement.color}">Купить</button>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Покупка абонемента
+        function buyAbonement(abonementId) {
+            alert(`Оформление покупки абонемента #${abonementId}`);
+            // Здесь будет переход на страницу оплаты
+        }
+    </script>
+{% endblock %} 

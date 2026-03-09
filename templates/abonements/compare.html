@@ -1,0 +1,40 @@
+{% extends 'abonements/base.html' %}
+{% block content %}
+    <div class="container">
+        <header class="header">
+            <a href="{{ url_for('abonements.index') }}" class="back-link">← Вернуться к списку</a>
+            <h1>Сравнение абонементов</h1>
+        </header>
+
+        <div class="comparison-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Характеристика</th>
+                        {% for name, features in comparison.items() %}
+                        <th>{{ name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feature_name, feature_values in comparison.items() %}
+                        {% if loop.first %}
+                            {% for key, value in feature_values.items() %}
+                            <tr>
+                                <td><strong>{{ key }}</strong></td>
+                                {% for name, features in comparison.items() %}
+                                <td>{{ features[key] }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="comparison-note">
+            <p>Все цены указаны в рублях. Специальные предложения действуют при покупке онлайн.</p>
+        </div>
+    </div>
+{% endblock %}

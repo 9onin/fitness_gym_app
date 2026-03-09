@@ -1,0 +1,77 @@
+{% extends 'abonements/base.html' %}
+
+{% block title %}{{ abonement.name }} - Fitness Gym{% endblock %}
+{% block content %}
+    <div class="container">
+        <header class="header">
+            <a href="{{ url_for('abonements.index') }}" class="back-link">← Вернуться к списку</a>
+            <h1>{{ abonement.name }}</h1>
+        </header>
+
+        <div class="detail-card" style="border-left: 4px solid {{ abonement.color }}">
+            <div class="detail-header">
+                <div class="detail-price">
+                    {% if abonement.discount > 0 %}
+                        <span class="old-price">{{ abonement.price }} ₽</span>
+                        <span class="price">{{ abonement.final_price }} ₽</span>
+                        <span class="discount-badge">-{{ abonement.discount }}%</span>
+                    {% else %}
+                        <span class="price">{{ abonement.price }} ₽</span>
+                    {% endif %}
+                </div>
+                <div class="detail-meta">
+                    <span class="duration">{{ abonement.duration_text }}</span>
+                    <span class="visits">{{ abonement.visits_text }}</span>
+                </div>
+            </div>
+
+            <div class="detail-description">
+                <h3>Описание</h3>
+                <p>{{ abonement.description }}</p>
+            </div>
+
+            <div class="detail-features">
+                <h3>Что включено в абонемент</h3>
+                <ul class="features-list">
+                    {% for feature in abonement.features %}
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span class="feature-text">{{ feature }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if abonement.price_per_visit > 0 %}
+            <div class="detail-calculation">
+                <h3>Расчет выгоды</h3>
+                <p>Цена за одну тренировку: <strong>{{ abonement.price_per_visit }} ₽</strong></p>
+                <p>Экономия по сравнению с разовыми посещениями: 
+                   <strong class="profit">{{ (500 - abonement.price_per_visit) * abonement.visits_count }} ₽</strong>
+                </p>
+            </div>
+            {% endif %}
+
+            <div class="detail-actions">
+                <button class="btn-buy-large" onclick="buyAbonement({{ abonement.id }})" 
+                        style="background-color: {{ abonement.color }}">
+                    Купить абонемент
+                </button>
+                <button class="btn-consult" onclick="consultation()">
+                    Получить консультацию
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function buyAbonement(abonementId) {
+            alert(`Оформление покупки абонемента #${abonementId}`);
+            // Здесь будет переход на страницу оплаты
+        }
+        
+        function consultation() {
+            alert('Заявка на консультацию отправлена. Наш менеджер свяжется с вами в ближайшее время.');
+        }
+    </script>
+{% endblock %}

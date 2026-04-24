@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request, abort
 from flask_login import login_required, current_user
-from models.models import User, Trainer, Workout, WorkoutType, Booking
+from models.models import User, Trainer, Workout, WorkoutType, Booking, Abonement, UserAbonement
 from models.database import db
-from forms.admin_forms import TrainerForm, WorkoutForm, WorkoutTypeForm
+from forms.admin_forms import TrainerForm, WorkoutForm, WorkoutTypeForm, AbonementForm
 from services.notification_service import send_schedule_update_notification
 from datetime import datetime, timedelta
 from functools import wraps
@@ -424,4 +424,128 @@ def make_admin(user_id):
         db.session.commit()
         flash(f'Пользователь {user.email} теперь администратор', 'success')
     
-    return redirect(url_for('admin.users')) 
+    return redirect(url_for('admin.users'))
+
+
+@admin_bp.route('/abonements')
+@login_required
+@admin_required
+def abonements():
+    """
+    Обработчик маршрута списка абонементов
+    """
+    db.session.rollback()
+    all_abonements = Abonement.query.all()
+    return render_template('admin/abonements/index.html',
+                         title='Управление абонементами',
+                         abonements_list=all_abonements)
+
+
+@admin_bp.route('/abonements/new', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def new_abonement():
+    """
+    Обработчик маршрута создания нового абонемента
+    """
+    form = AbonementForm()
+
+    if form.validate_on_submit():
+        abonement = Abonement(
+            name=form.name.data,
+            type=form.type.data,
+            price=form.price.data,
+            duration_days=form.duration_days.data,
+            visits_count=form.visits_count.data,
+            description=form.description.data,
+            features=form.features.data,
+            color=form.color.data,
+            is_popular=form.is_popular.data,
+            discount=form.discount.data,
+            is_active=form.is_active.data
+        )
+        
+        db.session.add(abonement)
+        db.session.flush()
+        db.session.commit()
+        
+        flash('Абонемент успешно добавлен', 'success')
+        return redirect(url_for('admin.abonements'))
+    
+    return render_template('admin/abonements/form.html',
+                         title='Добавить абонемент',
+                         form=form)
+
+
+@admin_bp.route('/abonements/edit/<int:abonement_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_abonement(abonement_id):
+    """
+    Обработчик маршрута редактирования абонемента
+    """
+    abonement = Abonement.query.get_or_404(abonement_id)
+    form = AbonementForm(obj=abonement)
+    
+    if form.validate_on_submit():
+        abonement.name = form.name.data
+        abonement.type = form.type.data
+        abonement.price = form.price.data
+        abonement.duration_days = form.duration_days.data
+        abonement.visits_count = form.visits_count.data
+        abonement.description = form.description.data
+        abonement.features = form.features.data
+        abonement.color = form.color.data
+        abonement.is_popular = form.is_popular.data
+        abonement.discount = form.discount.data
+        abonement.is_active = form.is_active.data
+        
+        db.session.commit()
+        
+        flash('Абонемент успешно обновлен', 'success')
+        return redirect(url_for('admin.abonements'))
+    
+    return render_template('admin/abonements/form.html',
+                         title='Редактировать абонемент',
+                         form=form,
+                         abonement=abonement)
+
+
+@admin_bp.route('/abonements/delete/<int:abonement_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_abonement(abonement_id):
+    """
+    Обработчик маршрута удаления абонемента
+    """
+    abonement = Abonement.query.get_or_404(abonement_id)
+    
+    db.session.delete(abonement)
+    db.session.commit()
+    
+    flash('Абонемент успешно удален', 'success')
+    return redirect(url_for('admin.abonements'))
+
+
+@admin_bp.route('/user-abonements')
+@login_required
+@admin_required
+def user_abonements():
+    """
+    Обработчик маршрута списка купленных абонементов
+    """
+    filter_type = request.args.get('filter', 'active')
+    
+    query = UserAbonement.query
+    
+    if filter_type == 'active':
+        user_abonements_list = query.filter(UserAbonement.is_active == True).all()
+    elif filter_type == 'expired':
+        user_abonements_list = query.filter(UserAbonement.expiration_date < datetime.utcnow()).all()
+    else:
+        user_abonements_list = query.all()
+    
+    return render_template('admin/abonements/user_abonements.html',
+                         title='Купленные абонементы',
+                         user_abonements=user_abonements_list,
+                         filter_type=filter_type) 

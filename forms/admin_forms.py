@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, IntegerField, SelectField, DateTimeField, SubmitField
-from wtforms.validators import DataRequired, Length, NumberRange, ValidationError
+from wtforms import StringField, TextAreaField, IntegerField, SelectField, DateTimeField, SubmitField, BooleanField
+from wtforms.validators import DataRequired, Length, NumberRange, ValidationError, Optional
 from datetime import datetime, timedelta
 
 class TrainerForm(FlaskForm):
@@ -57,4 +57,34 @@ class WorkoutForm(FlaskForm):
         Проверка, что время начала не в прошлом
         """
         if field.data < datetime.now():
-            raise ValidationError('Время начала не может быть в прошлом') 
+            raise ValidationError('Время начала не может быть в прошлом')
+
+
+class AbonementForm(FlaskForm):
+    """
+    Форма для добавления и редактирования абонементов
+    """
+    name = StringField('Название', validators=[DataRequired(), Length(max=100)],
+                   render_kw={"placeholder": "Например: Базовый, VIP"})
+    type = SelectField('Тип абонемента', validators=[DataRequired()],
+                       choices=[
+                           ('trial', 'Пробный'),
+                           ('basic', 'Базовый'),
+                           ('vip', 'VIP'),
+                           ('package', 'Пакет посещений'),
+                           ('other', 'Другой')
+                       ])
+    price = IntegerField('Цена (₽)', validators=[DataRequired(), NumberRange(min=0)],
+                         render_kw={"placeholder": "Стоимость в рублях"})
+    duration_days = IntegerField('Срок действия (дней)', validators=[DataRequired(), NumberRange(min=1)],
+                                 render_kw={"placeholder": "Количество дней"})
+    visits_count = IntegerField('Количество посещений', validators=[DataRequired(), NumberRange(min=0)],
+                                 render_kw={"placeholder": "0 = безлимит"})
+    description = TextAreaField('Описание', render_kw={"placeholder": "Описание абонемента"})
+    features = TextAreaField('Возможности', render_kw={"placeholder": "Каждая возможность с новой строки"})
+    color = StringField('Цвет карточки', validators=[Length(max=20)], default='#4CAF50',
+                       render_kw={"placeholder": "HEX код, например #4CAF50"})
+    is_popular = BooleanField('Популярный')
+    discount = IntegerField('Скидка (%)', validators=[NumberRange(min=0, max=100)], default=0)
+    is_active = BooleanField('Активен', default=True)
+    submit = SubmitField('Сохранить') 

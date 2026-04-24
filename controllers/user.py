@@ -1,10 +1,22 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
-from models.models import Workout, Booking, WorkoutType
+from models.models import Workout, Booking, WorkoutType, UserAbonement
 from models.database import db
 from forms.booking_forms import BookingForm
 from datetime import datetime, timedelta
 from services.notification_service import send_booking_confirmation
+
+
+def get_valid_abonement(user_id):
+    """Получить действующий абонемент пользователя"""
+    return UserAbonement.query.filter(
+        UserAbonement.user_id == user_id,
+        UserAbonement.is_active == True,
+        UserAbonement.expiration_date > datetime.utcnow()
+    ).filter(
+        (UserAbonement.visits_remaining == None) | 
+        (UserAbonement.visits_remaining > 0)
+    ).first()
 
 # Создание блюпринта для пользовательских маршрутов
 user_bp = Blueprint('user', __name__)
@@ -88,6 +100,12 @@ def book_workout(workout_id):
         flash('На данную тренировку не осталось свободных мест', 'danger')
         return redirect(url_for('user.workouts'))
 
+    # Проверяем наличие действующего абонемента
+    valid_abonement = get_valid_abonement(current_user.id)
+    if not valid_abonement:
+        flash('У вас нет действующего абонемента. Приобретите абонемент для записи на тренировку.', 'warning')
+        return redirect(url_for('abonements.index'))
+
     form = BookingForm()
 
     if form.validate_on_submit():
@@ -100,6 +118,12 @@ def book_workout(workout_id):
         db.session.add(booking)
         db.session.commit()
 
+        # Списываем посещение (только для пакетных абонементов)
+        if valid_abonement.visits_remaining is not None:
+            valid_abonement.visits_remaining -= 1
+
+        db.session.commit()
+
         # Отправляем уведомление о записи
         send_booking_confirmation(current_user, workout)
 
@@ -109,7 +133,8 @@ def book_workout(workout_id):
     return render_template('user/book_workout.html',
                          title='Запись на тренировку',
                          form=form,
-                         workout=workout)
+                         workout=workout,
+                         valid_abonement=valid_abonement)
 
 @user_bp.route('/cancel_booking/<int:booking_id>', methods=['POST'])
 @login_required
@@ -135,3 +160,37 @@ def cancel_booking(booking_id):
 
     flash('Запись на тренировку успешно отменена', 'success')
     return redirect(url_for('user.schedule'))
+
+
+@user_bp.route('/check_in/<int:booking_id>', methods=['POST'])
+@login_required
+def check_in(booking_id):
+    """Отметка о посещении тренировки"""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    if booking.user_id != current_user.id:
+        flash('У вас нет прав для этой операции', 'danger')
+        return redirect(url_for('user.schedule'))
+    
+    if booking.attended:
+        flash('Вы уже отмечены как посетивший', 'info')
+        return redirect(url_for('user.schedule'))
+    
+    booking.attended = True
+    db.session.commit()
+    
+    flash('Посещение засчитано!', 'success')
+    return redirect(url_for('user.schedule'))
+
+
+@user_bp.route('/my_abonements')
+@login_required
+def my_abonements():
+    """Мои абонементы - перенаправление на абонементы"""
+    from models.models import UserAbonement
+    user_abonements = UserAbonement.query.filter_by(user_id=current_user.id).order_by(
+        UserAbonement.purchase_date.desc()
+    ).all()
+    return render_template('abonements/my_abonements.html',
+                         user_abonements=user_abonements,
+                         title="Мои абонементы")

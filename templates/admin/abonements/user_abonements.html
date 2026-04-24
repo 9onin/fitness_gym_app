@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Купленные абонементы - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-indigo-700 text-white py-4 px-6">
+            <h2 class="text-2xl font-bold">Купленные абонементы</h2>
+        </div>
+        
+        <div class="p-6">
+            <div class="flex space-x-4 mb-6">
+                <a href="{{ url_for('admin.user_abonements', filter='active') }}" 
+                   class="px-4 py-2 rounded {% if filter_type == 'active' %}bg-indigo-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %}">
+                    Активные
+                </a>
+                <a href="{{ url_for('admin.user_abonements', filter='expired') }}" 
+                   class="px-4 py-2 rounded {% if filter_type == 'expired' %}bg-indigo-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %}">
+                    Истекшие
+                </a>
+                <a href="{{ url_for('admin.user_abonements', filter='all') }}" 
+                   class="px-4 py-2 rounded {% if filter_type == 'all' %}bg-indigo-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %}">
+                    Все
+                </a>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-4 text-left">Пользователь</th>
+                            <th class="py-3 px-4 text-left">Абонемент</th>
+                            <th class="py-3 px-4 text-left">Дата покупки</th>
+                            <th class="py-3 px-4 text-left">Срок действия</th>
+                            <th class="py-3 px-4 text-left">Посещения</th>
+                            <th class="py-3 px-4 text-center">Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ua in user_abonements %}
+                            <tr class="border-t hover:bg-gray-50">
+                                <td class="py-3 px-4">
+                                    {{ ua.user.first_name }} {{ ua.user.last_name }}<br>
+                                    <span class="text-gray-500 text-sm">{{ ua.user.email }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="font-semibold">{{ ua.abonement.name }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    {{ ua.purchase_date.strftime('%d.%m.%Y') }}
+                                </td>
+                                <td class="py-3 px-4">
+                                    {% if ua.is_expired %}
+                                        <span class="text-red-500">Истек {{ ua.expiration_date.strftime('%d.%m.%Y') }}</span>
+                                    {% else %}
+                                        до {{ ua.expiration_date.strftime('%d.%m.%Y') }}
+                                        <span class="text-gray-500 text-sm">({{ ua.days_remaining }} дн.)</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4">
+                                    {% if ua.visits_remaining is none %}
+                                        <span class="text-green-600">Безлимит</span>
+                                    {% else %}
+                                        {{ ua.visits_remaining }} / {{ ua.abonement.visits_count }}
+                                        <span class="text-gray-500 text-sm">({{ ua.visits_used }} использовано)</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    {% if ua.is_valid %}
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Активен</span>
+                                    {% else %}
+                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">Недействителен</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="py-4 px-4 text-center text-gray-500">Нет купленных абонементов</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-8 flex justify-between">
+                <a href="{{ url_for('admin.abonements') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
+                    &larr; К списку абонементов
+                </a>
+                <a href="{{ url_for('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
+                    К панели администратора &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

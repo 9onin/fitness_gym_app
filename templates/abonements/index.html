@@ -1,170 +1,160 @@
 {% extends 'abonements/base.html' %}
 
-{% block title %}Наши абонементы - Fitness Gym{% endblock %}
+{% block title %}Абонементы - Fitness Gym{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <header class="header">
-            <h1>Выберите свой абонемент</h1>
-            <p class="subtitle">Начните свой путь к здоровому телу сегодня</p>
-        </header>
+<div class="max-w-6xl mx-auto">
 
-        <div class="filter-buttons">
-            <button class="filter-btn active" onclick="filterAbonements('all')">Все</button>
-            <button class="filter-btn" onclick="filterAbonements('trial')">Пробные</button>
-            <button class="filter-btn" onclick="filterAbonements('basic')">Базовые</button>
-            <button class="filter-btn" onclick="filterAbonements('vip')">VIP</button>
-        </div>
-
-        <div class="abonements-grid" id="abonements-grid">
-            {% for abonement in abonements %}
-            <div class="abonement-card" data-type="{{ abonement.type }}" style="border-top: 4px solid {{ abonement.color }}">
-                {% if abonement.is_popular %}
-                <div class="popular-badge">🔥 Самый популярный</div>
-                {% endif %}
-                
-                <div class="card-header">
-                    <h2>{{ abonement.name }}</h2>
-                    <p class="description">{{ abonement.description }}</p>
-                </div>
-                
-                <div class="price-section">
-                    {% if abonement.discount > 0 %}
-                    <div class="old-price">{{ abonement.price }} ₽</div>
-                    <div class="price">{{ abonement.final_price }} ₽</div>
-                    <div class="discount-badge">-{{ abonement.discount }}%</div>
-                    {% else %}
-                    <div class="price">{{ abonement.price }} ₽</div>
-                    {% endif %}
-                    <div class="duration">{{ abonement.duration_text }}</div>
-                </div>
-                
-                <div class="visits-info">
-                    <span class="visits-count">{{ abonement.visits_text }}</span>
-                    {% if abonement.price_per_visit > 0 %}
-                    <span class="price-per-visit">{{ abonement.price_per_visit }} ₽/тренировка</span>
-                    {% endif %}
-                </div>
-                
-                <div class="features">
-                    <h3>Включено:</h3>
-                    <ul>
-                        {% for feature in abonement.features %}
-                        <li>✓ {{ feature }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                
-                <div class="card-footer">
-                    <a href="{{ url_for('abonements.abonement_detail', abonement_id=abonement.id) }}" class="btn-details">Подробнее</a>
-                    <button class="btn-buy" onclick="buyAbonement({{ abonement.id }})" 
-                            style="background-color: {{ abonement.color }}">Купить</button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div class="comparison-link">
-            <a href="{{ url_for('abonements.compare_abonements') }}" class="btn-compare">Сравнить все абонементы</a>
-        </div>
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">Выберите свой абонемент</h1>
+        <p class="text-gray-500 text-lg">Начните путь к здоровому телу уже сегодня</p>
     </div>
 
-    <script>
-        // Фильтрация абонементов
-        async function filterAbonements(type) {
-            // Обновление активной кнопки
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Запрос к API
-            const response = await fetch('/filter', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({type: type})
-            });
-            
-            const abonements = await response.json();
-            updateAbonementsGrid(abonements);
-        }
-        
-        // Обновление сетки абонементов
-        function updateAbonementsGrid(abonements) {
-            const grid = document.getElementById('abonements-grid');
-            grid.innerHTML = '';
-            
-            abonements.forEach(abonement => {
-                const card = createAbonementCard(abonement);
-                grid.appendChild(card);
-            });
-        }
-        
-        // Создание карточки абонемента
-        function createAbonementCard(abonement) {
-            const card = document.createElement('div');
-            card.className = 'abonement-card';
-            card.style.borderTop = `4px solid ${abonement.color}`;
-            card.dataset.type = abonement.type;
-            
-            let popularBadge = '';
-            if (abonement.is_popular) {
-                popularBadge = '<div class="popular-badge">🔥 Самый популярный</div>';
-            }
-            
-            let priceHtml = '';
-            if (abonement.discount > 0) {
-                priceHtml = `
-                    <div class="old-price">${abonement.price} ₽</div>
-                    <div class="price">${abonement.final_price} ₽</div>
-                    <div class="discount-badge">-${abonement.discount}%</div>
-                `;
-            } else {
-                priceHtml = `<div class="price">${abonement.price} ₽</div>`;
-            }
-            
-            let perVisitHtml = '';
-            if (abonement.price_per_visit > 0) {
-                perVisitHtml = `<span class="price-per-visit">${abonement.price_per_visit} ₽/тренировка</span>`;
-            }
-            
-            let featuresHtml = '';
-            abonement.features.forEach(feature => {
-                featuresHtml += `<li>✓ ${feature}</li>`;
-            });
-            
-            card.innerHTML = `
-                ${popularBadge}
-                <div class="card-header">
-                    <h2>${abonement.name}</h2>
-                    <p class="description">${abonement.description}</p>
+    <div class="flex justify-center gap-3 mb-10 flex-wrap">
+        <button onclick="filterAbonements('all', this)" class="filter-btn active px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Все</button>
+        <button onclick="filterAbonements('trial', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Пробные</button>
+        <button onclick="filterAbonements('basic', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Базовые</button>
+        <button onclick="filterAbonements('vip', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">VIP</button>
+    </div>
+
+    <div id="abonements-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        {% for abonement in abonements %}
+        <div class="abonement-card bg-white rounded-2xl shadow-md overflow-visible relative flex flex-col"
+             style="border-top: 4px solid {{ abonement.color }}"
+             data-type="{{ abonement.type }}">
+
+            {% if abonement.is_popular %}
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow whitespace-nowrap z-10">
+                🔥 Популярный выбор
+            </div>
+            {% endif %}
+
+            <div class="p-6 flex flex-col flex-1 {% if abonement.is_popular %}pt-7{% endif %}">
+                <div class="text-center mb-5">
+                    <h2 class="text-xl font-bold text-gray-800 mb-1">{{ abonement.name }}</h2>
+                    <p class="text-gray-500 text-sm leading-relaxed">{{ abonement.description }}</p>
                 </div>
-                <div class="price-section">
-                    ${priceHtml}
-                    <div class="duration">${abonement.duration_text}</div>
+
+                <div class="text-center pb-4 mb-4 border-b border-gray-100">
+                    {% if abonement.discount > 0 %}
+                    <div class="flex items-center justify-center gap-2 mb-1">
+                        <span class="text-gray-400 line-through">{{ abonement.price }} ₽</span>
+                        <span class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">-{{ abonement.discount }}%</span>
+                    </div>
+                    <div class="text-4xl font-bold text-gray-800">{{ abonement.final_price }} ₽</div>
+                    {% else %}
+                    <div class="text-4xl font-bold text-gray-800">{{ abonement.price }} ₽</div>
+                    {% endif %}
+                    <div class="text-gray-400 text-sm mt-1">{{ abonement.duration_text }}</div>
                 </div>
-                <div class="visits-info">
-                    <span class="visits-count">${abonement.visits_text}</span>
-                    ${perVisitHtml}
+
+                <div class="bg-gray-50 rounded-xl px-4 py-3 text-center mb-5">
+                    <div class="font-semibold text-gray-700 text-sm">{{ abonement.visits_text }}</div>
+                    {% if abonement.price_per_visit > 0 %}
+                    <div class="text-green-600 text-xs mt-0.5">{{ abonement.price_per_visit }} ₽ / тренировка</div>
+                    {% endif %}
                 </div>
-                <div class="features">
-                    <h3>Включено:</h3>
-                    <ul>${featuresHtml}</ul>
+
+                <ul class="flex-1 space-y-1.5 mb-6">
+                    {% for feature in abonement.features_list %}
+                    <li class="flex items-start gap-2 text-sm text-gray-600">
+                        <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
+                        <span>{{ feature }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="flex gap-2 mt-auto">
+                    <a href="{{ url_for('abonements.abonement_detail', abonement_id=abonement.id) }}"
+                       class="flex-1 text-center py-2.5 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors text-sm">
+                        Подробнее
+                    </a>
+                    <a href="{{ url_for('abonements.buy_abonement', abonement_id=abonement.id) }}"
+                       class="flex-1 text-center py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity text-sm"
+                       style="background-color: {{ abonement.color }}">
+                        Купить
+                    </a>
                 </div>
-                <div class="card-footer">
-                    <a href="/abonement/${abonement.id}" class="btn-details">Подробнее</a>
-                    <button class="btn-buy" onclick="buyAbonement(${abonement.id})" 
-                            style="background-color: ${abonement.color}">Купить</button>
-                </div>
-            `;
-            
-            return card;
-        }
-        
-        // Покупка абонемента
-        function buyAbonement(abonementId) {
-            alert(`Оформление покупки абонемента #${abonementId}`);
-            // Здесь будет переход на страницу оплаты
-        }
-    </script>
-{% endblock %} 
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center pb-4">
+        <a href="{{ url_for('abonements.compare_abonements') }}"
+           class="inline-block px-8 py-3 bg-gray-800 text-white rounded-full font-medium hover:bg-gray-700 transition-colors">
+            Сравнить все абонементы
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function filterAbonements(type, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const response = await fetch('{{ url_for("abonements.filter_abonements") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type})
+    });
+    renderCards(await response.json());
+}
+
+function renderCards(abonements) {
+    const grid = document.getElementById('abonements-grid');
+    grid.innerHTML = '';
+    abonements.forEach(a => grid.appendChild(buildCard(a)));
+}
+
+function buildCard(a) {
+    const priceHtml = a.discount > 0
+        ? `<div class="flex items-center justify-center gap-2 mb-1">
+               <span class="text-gray-400 line-through">${a.price} ₽</span>
+               <span class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">-${a.discount}%</span>
+           </div>
+           <div class="text-4xl font-bold text-gray-800">${a.final_price} ₽</div>`
+        : `<div class="text-4xl font-bold text-gray-800">${a.price} ₽</div>`;
+
+    const badge = a.is_popular
+        ? `<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow whitespace-nowrap z-10">🔥 Популярный выбор</div>`
+        : '';
+
+    const perVisit = a.price_per_visit > 0
+        ? `<div class="text-green-600 text-xs mt-0.5">${a.price_per_visit} ₽ / тренировка</div>` : '';
+
+    const features = a.features_list.map(f =>
+        `<li class="flex items-start gap-2 text-sm text-gray-600"><span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span><span>${f}</span></li>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.className = 'abonement-card bg-white rounded-2xl shadow-md overflow-visible relative flex flex-col';
+    card.style.borderTop = `4px solid ${a.color}`;
+    card.dataset.type = a.type;
+    card.innerHTML = `
+        ${badge}
+        <div class="p-6 flex flex-col flex-1 ${a.is_popular ? 'pt-7' : ''}">
+            <div class="text-center mb-5">
+                <h2 class="text-xl font-bold text-gray-800 mb-1">${a.name}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed">${a.description}</p>
+            </div>
+            <div class="text-center pb-4 mb-4 border-b border-gray-100">
+                ${priceHtml}
+                <div class="text-gray-400 text-sm mt-1">${a.duration_text}</div>
+            </div>
+            <div class="bg-gray-50 rounded-xl px-4 py-3 text-center mb-5">
+                <div class="font-semibold text-gray-700 text-sm">${a.visits_text}</div>
+                ${perVisit}
+            </div>
+            <ul class="flex-1 space-y-1.5 mb-6">${features}</ul>
+            <div class="flex gap-2 mt-auto">
+                <a href="/abonements/abonement/${a.id}" class="flex-1 text-center py-2.5 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors text-sm">Подробнее</a>
+                <a href="/abonements/buy/${a.id}" class="flex-1 text-center py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity text-sm" style="background-color: ${a.color}">Купить</a>
+            </div>
+        </div>`;
+    return card;
+}
+</script>
+{% endblock %}

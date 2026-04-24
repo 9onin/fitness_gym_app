@@ -1,0 +1,82 @@
+{% extends 'abonements/base.html' %}
+
+{% block title %}{{ title }} - Fitness Gym{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+
+    <a href="{{ url_for('abonements.index') }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 mb-6 text-sm font-medium">
+        ← Назад к абонементам
+    </a>
+
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6" style="border-top: 4px solid {{ abonement.color }}">
+        <div class="p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-1">{{ abonement.name }}</h2>
+            <p class="text-gray-500 text-sm mb-6">{{ abonement.description }}</p>
+
+            <div class="flex items-end gap-3 mb-4">
+                {% if abonement.discount > 0 %}
+                <span class="text-gray-400 line-through text-lg">{{ abonement.price }} ₽</span>
+                <span class="text-3xl font-bold text-gray-800">{{ abonement.final_price }} ₽</span>
+                <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">-{{ abonement.discount }}%</span>
+                {% else %}
+                <span class="text-3xl font-bold text-gray-800">{{ abonement.price }} ₽</span>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                    <div class="text-xs text-gray-400 mb-0.5">Срок действия</div>
+                    <div class="font-semibold text-gray-700 text-sm">{{ abonement.duration_text }}</div>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                    <div class="text-xs text-gray-400 mb-0.5">Посещения</div>
+                    <div class="font-semibold text-gray-700 text-sm">{{ abonement.visits_text }}</div>
+                </div>
+            </div>
+
+            <ul class="space-y-1.5 mb-2">
+                {% for feature in abonement.features_list %}
+                <li class="flex items-start gap-2 text-sm text-gray-600">
+                    <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
+                    <span>{{ feature }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-md p-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Подтверждение покупки</h3>
+
+        <div class="flex justify-between items-center py-3 border-b border-gray-100 text-sm">
+            <span class="text-gray-500">Абонемент</span>
+            <span class="font-medium text-gray-700">{{ abonement.name }}</span>
+        </div>
+        <div class="flex justify-between items-center py-3 border-b border-gray-100 text-sm">
+            <span class="text-gray-500">Срок</span>
+            <span class="font-medium text-gray-700">{{ abonement.duration_text }}</span>
+        </div>
+        {% if abonement.discount > 0 %}
+        <div class="flex justify-between items-center py-3 border-b border-gray-100 text-sm">
+            <span class="text-gray-500">Скидка</span>
+            <span class="font-medium text-green-600">-{{ abonement.discount }}% (экономия {{ abonement.price - abonement.final_price }} ₽)</span>
+        </div>
+        {% endif %}
+        <div class="flex justify-between items-center py-3 text-base font-bold">
+            <span class="text-gray-800">Итого</span>
+            <span class="text-xl" style="color: {{ abonement.color }}">{{ abonement.final_price }} ₽</span>
+        </div>
+
+        <form method="POST" class="mt-4">
+            <button type="submit"
+                    class="w-full py-3.5 rounded-xl text-white font-bold text-lg hover:opacity-90 transition-opacity"
+                    style="background-color: {{ abonement.color }}">
+                Оплатить {{ abonement.final_price }} ₽
+            </button>
+        </form>
+        <p class="text-center text-xs text-gray-400 mt-3">Нажимая кнопку, вы соглашаетесь с условиями использования</p>
+    </div>
+
+</div>
+{% endblock %}

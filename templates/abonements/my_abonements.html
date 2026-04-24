@@ -1,0 +1,62 @@
+{% extends 'abonements/base.html' %}
+
+{% block title %}Мои абонементы - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <header class="header">
+            <h1>Мои абонементы</h1>
+            <p class="subtitle">Управление вашими абонементами</p>
+        </header>
+        
+        <div class="abonements-grid">
+            {% for ua in user_abonements %}
+            <div class="abonement-card" style="border-top: 4px solid {{ ua.abonement.color }}">
+                <div class="card-header">
+                    <h2>{{ ua.abonement.name }}</h2>
+                    <p class="description">{{ ua.abonement.description }}</p>
+                </div>
+                
+                <div class="status-section">
+                    {% if ua.is_valid %}
+                    <span class="status-active">Активен</span>
+                    {% else %}
+                    <span class="status-expired">Недействителен</span>
+                    {% endif %}
+                </div>
+                
+                <div class="info-section">
+                    <p><strong>Дата покупки:</strong> {{ ua.purchase_date.strftime('%d.%m.%Y') }}</p>
+                    <p><strong>Срок действия:</strong> до {{ ua.expiration_date.strftime('%d.%m.%Y') }}</p>
+                    
+                    {% if ua.is_expired %}
+                    <p class="text-red"><strong>Истек:</strong> {{ ua.days_remaining * -1 }} дней назад</p>
+                    {% elif ua.days_remaining is not none %}
+                    <p><strong>Осталось дней:</strong> {{ ua.days_remaining }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="visits-section">
+                    {% if ua.visits_remaining is none %}
+                    <p><strong>Посещения:</strong> <span class="text-green">Безлимит</span></p>
+                    {% else %}
+                    <p><strong>Посещения:</strong> {{ ua.visits_remaining }} / {{ ua.abonement.visits_count }}</p>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: {{ (ua.visits_used / ua.abonement.visits_count * 100)|int }}%"></div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>У вас пока нет абонементов</p>
+                <a href="{{ url_for('abonements.index') }}" class="btn-buy">Выбрать абонемент</a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="actions">
+            <a href="{{ url_for('abonements.index') }}" class="btn-details">Выбрать новый абонемент</a>
+        </div>
+    </div>
+{% endblock %}

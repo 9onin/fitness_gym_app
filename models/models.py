@@ -115,6 +115,154 @@ class Booking(db.Model):
     workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), nullable=False)
     booked_at = db.Column(db.DateTime, default=datetime.utcnow)
     attended = db.Column(db.Boolean, default=False)
+    visit_charged = db.Column(db.Boolean, default=False)
     
     def __repr__(self):
-        return f'<Booking {self.id} User:{self.user_id} Workout:{self.workout_id}>' 
+        return f'<Booking {self.id} User:{self.user_id} Workout:{self.workout_id}>'
+
+
+class Abonement(db.Model):
+    """
+    Модель абонемента
+    """
+    __tablename__ = 'abonements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    type = db.Column(db.String(50), nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    duration_days = db.Column(db.Integer, nullable=False)
+    visits_count = db.Column(db.Integer, default=0)
+    description = db.Column(db.Text)
+    features = db.Column(db.Text)
+    color = db.Column(db.String(20), default='#4CAF50')
+    is_popular = db.Column(db.Boolean, default=False)
+    discount = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    @property
+    def final_price(self):
+        """Цена со скидкой"""
+        if self.discount > 0:
+            return int(self.price * (100 - self.discount) / 100)
+        return self.price
+    
+    @property
+    def price_per_visit(self):
+        """Цена за одно посещение"""
+        if self.visits_count > 0:
+            return int(self.final_price / self.visits_count)
+        return 0
+    
+    @property
+    def duration_text(self):
+        """Текст длительности"""
+        if self.duration_days == 1:
+            return "1 день"
+        elif self.duration_days < 30:
+            return f"{self.duration_days} дней"
+        elif self.duration_days == 30:
+            return "1 месяц"
+        elif self.duration_days == 90:
+            return "3 месяца"
+        elif self.duration_days == 180:
+            return "6 месяцев"
+        elif self.duration_days == 365:
+            return "1 год"
+        else:
+            return f"{self.duration_days} дней"
+    
+    @property
+    def visits_text(self):
+        """Текст количества посещений"""
+        if self.visits_count == 0:
+            return "Безлимит"
+        elif self.visits_count == 1:
+            return "1 тренировка"
+        elif self.visits_count < 5:
+            return f"{self.visits_count} тренировки"
+        else:
+            return f"{self.visits_count} тренировок"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'type': self.type,
+            'price': self.price,
+            'final_price': self.final_price,
+            'duration_days': self.duration_days,
+            'duration_text': self.duration_text,
+            'visits_count': self.visits_count,
+            'visits_text': self.visits_text,
+            'description': self.description,
+            'features': self.features_list,
+            'color': self.color,
+            'is_popular': self.is_popular,
+            'discount': self.discount,
+            'price_per_visit': self.price_per_visit
+        }
+    
+    @property
+    def features_list(self):
+        """Список возможностей"""
+        if not self.features:
+            return []
+        return [f.strip() for f in self.features.split('\n') if f.strip()]
+    
+    def __repr__(self):
+        return f'<Abonement {self.name}>'
+
+
+class UserAbonement(db.Model):
+    """
+    Модель купленного абонемента пользователя
+    """
+    __tablename__ = 'user_abonements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    abonement_id = db.Column(db.Integer, db.ForeignKey('abonements.id'), nullable=False)
+    purchase_date = db.Column(db.DateTime, default=datetime.utcnow)
+    expiration_date = db.Column(db.DateTime, nullable=False)
+    visits_remaining = db.Column(db.Integer, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    payment_info = db.Column(db.Text)
+    
+    user = db.relationship('User', backref='abonements')
+    abonement = db.relationship('Abonement')
+    
+    @property
+    def is_valid(self):
+        """Проверка валидности абонемента"""
+        if not self.is_active:
+            return False
+        if datetime.utcnow() > self.expiration_date:
+            return False
+        if self.visits_remaining is not None and self.visits_remaining <= 0:
+            return False
+        return True
+    
+    @property
+    def is_expired(self):
+        """Проверка истечения срока"""
+        return datetime.utcnow() > self.expiration_date
+    
+    @property
+    def visits_used(self):
+        """Количество использованных посещений"""
+        if self.visits_remaining is None:
+            return None
+        return self.abonement.visits_count - self.visits_remaining
+    
+    @property
+    def days_remaining(self):
+        """Оставшиеся дни"""
+        if self.is_expired:
+            return 0
+        delta = self.expiration_date - datetime.utcnow()
+        return max(0, delta.days)
+    
+    def __repr__(self):
+        return f'<UserAbonement {self.id} User:{self.user_id} Abonement:{self.abonement_id}>' 

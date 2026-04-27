@@ -4,42 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Fitness Gym{% endblock %}</title>
-    
-    <!-- TailwindCSS через CDN -->
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Дополнительные стили -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <style>
-        /* Можно добавить дополнительные стили если нужно */
-    </style>
-    
-    <!-- Дополнительные скрипты -->
     {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-gray-100 flex flex-col {% block body_class %}{% endblock %}">
-    <!-- Шапка сайта -->
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div>
                 <a href="{{ url_for('main.index') }}" class="text-xl font-bold">Fitness Gym</a>
             </div>
-            
+
             <nav>
                 <ul class="flex space-x-4">
                     <li><a href="{{ url_for('main.index') }}" class="hover:text-indigo-200">Главная</a></li>
-                    
+
                     {% if current_user.is_authenticated %}
                         <li><a href="{{ url_for('user.workouts') }}" class="hover:text-indigo-200">Тренировки</a></li>
+                        <li><a href="{{ url_for('user.fitness_assistant') }}" class="hover:text-indigo-200">Подбор плана</a></li>
                         <li><a href="{{ url_for('user.schedule') }}" class="hover:text-indigo-200">Мое расписание</a></li>
                         <li><a href="{{ url_for('abonements.index') }}" class="hover:text-white">Абонементы</a></li>
                         <li><a href="{{ url_for('abonements.my_abonements') }}" class="hover:text-white">Мои абонементы</a></li>
-                        
+
                         {% if current_user.is_admin %}
                             <li><a href="{{ url_for('admin.dashboard') }}" class="hover:text-indigo-200">Админ-панель</a></li>
                             <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="hover:text-indigo-200">Аналитика</a></li>
                         {% endif %}
-                        
+
                         <li>
                             <form action="{{ url_for('auth.logout') }}" method="get" class="inline">
                                 <button type="submit" class="bg-indigo-800 hover:bg-indigo-900 px-3 py-1 rounded">Выйти</button>
@@ -53,8 +45,7 @@
             </nav>
         </div>
     </header>
-    
-    <!-- Флеш-сообщения -->
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="container mx-auto px-4 py-2">
@@ -67,7 +58,7 @@
                     {% elif category == 'info' %}
                         {% set alert_class = 'bg-blue-100 border-blue-500 text-blue-700' %}
                     {% endif %}
-                    
+
                     <div class="{{ alert_class }} border-l-4 p-4 mb-2 rounded flash-message">
                         <p>{{ message }}</p>
                     </div>
@@ -75,27 +66,26 @@
             </div>
         {% endif %}
     {% endwith %}
-    
-    <!-- Основное содержимое -->
+
     <main class="container mx-auto px-4 py-6 flex-grow">
         {% block content %}{% endblock %}
     </main>
-    
-    <!-- Подвал сайта -->
+
     <footer class="bg-gray-800 text-white py-6">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <h3 class="text-lg font-semibold mb-3">Fitness Gym</h3>
-                    <p class="text-gray-300">Ваша сеть фитнес-центров для комфортных тренировок</p>
+                    <p class="text-gray-300">Сеть фитнес-клубов для комфортных тренировок и понятного прогресса.</p>
                 </div>
-                
+
                 <div>
                     <h3 class="text-lg font-semibold mb-3">Быстрые ссылки</h3>
                     <ul class="space-y-1 text-gray-300">
                         <li><a href="{{ url_for('main.index') }}" class="hover:text-white">Главная</a></li>
                         {% if current_user.is_authenticated %}
                             <li><a href="{{ url_for('user.workouts') }}" class="hover:text-white">Тренировки</a></li>
+                            <li><a href="{{ url_for('user.fitness_assistant') }}" class="hover:text-white">Подбор плана</a></li>
                             <li><a href="{{ url_for('user.schedule') }}" class="hover:text-white">Мое расписание</a></li>
                             <li><a href="{{ url_for('abonements.index') }}" class="hover:text-white">Абонементы</a></li>
                         {% else %}
@@ -104,7 +94,7 @@
                         {% endif %}
                     </ul>
                 </div>
-                
+
                 <div>
                     <h3 class="text-lg font-semibold mb-3">Контакты</h3>
                     <p class="text-gray-300">Адрес: ул. Спортивная, 10</p>
@@ -112,17 +102,14 @@
                     <p class="text-gray-300">Email: info@fitnessgym.com</p>
                 </div>
             </div>
-            
+
             <div class="mt-6 pt-6 border-t border-gray-700 text-center text-gray-400">
                 <p>&copy; {{ now().year }} Fitness Gym. Все права защищены.</p>
             </div>
         </div>
     </footer>
-    
-    <!-- Основной JavaScript файл -->
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    
-    <!-- Дополнительные скрипты -->
     {% block scripts %}{% endblock %}
 </body>
-</html> 
+</html>

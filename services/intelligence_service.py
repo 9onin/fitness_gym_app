@@ -38,6 +38,45 @@ GOAL_RULES = {
 }
 
 
+FITNESS_ASSISTANT_GOALS = {
+    'weight_loss': {
+        'label': 'Сбросить вес',
+        'goal_text': 'снижение веса',
+        'types': ['Кардио', 'Функциональный тренинг', 'Зумба', 'Спиннинг'],
+        'frequency': '3-4 тренировки в неделю',
+        'focus': 'умеренное кардио, стабильный расход калорий и постепенное повышение выносливости',
+    },
+    'muscle_gain': {
+        'label': 'Прокачать мышцы',
+        'goal_text': 'набор массы',
+        'types': ['Силовая тренировка', 'ТРХ', 'Кроссфит'],
+        'frequency': '3 силовые тренировки в неделю',
+        'focus': 'базовые силовые движения, рост нагрузки и полноценное восстановление',
+    },
+    'endurance': {
+        'label': 'Повысить выносливость',
+        'goal_text': 'выносливость',
+        'types': ['Кардио', 'Бег', 'Функциональный тренинг', 'Спиннинг'],
+        'frequency': '3-4 тренировки в неделю',
+        'focus': 'длинные циклы работы, контроль пульса и чередование темпа',
+    },
+    'flexibility': {
+        'label': 'Улучшить гибкость',
+        'goal_text': 'гибкость',
+        'types': ['Йога', 'Пилатес', 'Стретчинг'],
+        'frequency': '2-3 тренировки в неделю',
+        'focus': 'мягкая мобильность, восстановление суставов и аккуратная работа с телом',
+    },
+    'wellness': {
+        'label': 'Поддерживать форму',
+        'goal_text': 'поддержание формы',
+        'types': ['Функциональный тренинг', 'Йога', 'Кардио'],
+        'frequency': '2-3 тренировки в неделю',
+        'focus': 'баланс силы, тонуса и хорошего самочувствия без перегрузки',
+    },
+}
+
+
 def build_client_intelligence(user):
     now = datetime.utcnow()
     month_ago = now - timedelta(days=30)
@@ -122,6 +161,48 @@ def build_client_intelligence(user):
 
 def build_user_directory_intelligence(users):
     return {user.id: build_client_intelligence(user) for user in users if not user.is_admin}
+
+
+def build_fitness_assistant_plan(height_cm, weight_kg, goal_key):
+    available_names = {workout_type.name for workout_type in WorkoutType.query.all()}
+    goal = FITNESS_ASSISTANT_GOALS.get(goal_key, FITNESS_ASSISTANT_GOALS['wellness'])
+    bmi = round(weight_kg / ((height_cm / 100) ** 2), 1)
+
+    if bmi < 18.5:
+        bmi_label = 'Ниже нормы'
+        bmi_note = 'Лучше делать упор на постепенное укрепление мышц и восстановление, без агрессивного дефицита.'
+    elif bmi < 25:
+        bmi_label = 'Норма'
+        bmi_note = 'Можно спокойно двигаться к выбранной цели через регулярность и сбалансированную нагрузку.'
+    elif bmi < 30:
+        bmi_label = 'Выше нормы'
+        bmi_note = 'Подойдут бережные кардио- и функциональные тренировки с плавным ростом нагрузки.'
+    else:
+        bmi_label = 'Зона повышенного контроля'
+        bmi_note = 'Лучше начинать с умеренной нагрузки и комфортного темпа, без резких перегрузок.'
+
+    recommended_types = [name for name in goal['types'] if name in available_names][:3]
+    if not recommended_types:
+        recommended_types = _recommend_workouts(goal['goal_text'])
+
+    if bmi >= 30 and goal_key == 'muscle_gain':
+        caution = 'Лучше сочетать силовые тренировки с умеренным кардио, чтобы безопасно войти в ритм.'
+    elif bmi < 18.5 and goal_key == 'weight_loss':
+        caution = 'Сильное снижение калорий и перегрузка сейчас не приоритетны. Лучше выбрать мягкий тонус и восстановление.'
+    else:
+        caution = 'Начинайте с комфортного уровня и повышайте нагрузку постепенно, ориентируясь на самочувствие.'
+
+    return {
+        'goal_key': goal_key,
+        'goal_label': goal['label'],
+        'bmi': bmi,
+        'bmi_label': bmi_label,
+        'bmi_note': bmi_note,
+        'recommended_types': recommended_types,
+        'recommended_frequency': goal['frequency'],
+        'focus': goal['focus'],
+        'caution': caution,
+    }
 
 
 def _recommend_workouts(goal_text):

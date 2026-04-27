@@ -6,7 +6,11 @@ from flask_login import current_user, login_required
 from forms.booking_forms import BookingForm
 from models.database import db
 from models.models import Booking, Trainer, UserAbonement, Workout, WorkoutType
-from services.intelligence_service import build_client_intelligence
+from services.intelligence_service import (
+    FITNESS_ASSISTANT_GOALS,
+    build_client_intelligence,
+    build_fitness_assistant_plan,
+)
 from services.notification_service import send_booking_confirmation
 from services.trainer_balance_service import ensure_trainers_and_balance_workouts
 
@@ -117,6 +121,64 @@ def trainer_detail(trainer_id):
         title=f'{trainer.first_name} {trainer.last_name}',
         trainer=trainer,
         upcoming_workouts=upcoming_workouts,
+    )
+
+
+@user_bp.route('/fitness-assistant', methods=['GET', 'POST'])
+@login_required
+def fitness_assistant():
+    ensure_trainers_and_balance_workouts()
+    goal_choices = [
+        {'value': key, 'label': item['label']}
+        for key, item in FITNESS_ASSISTANT_GOALS.items()
+    ]
+    form_data = {
+        'height_cm': '',
+        'weight_kg': '',
+        'goal_key': 'wellness',
+    }
+    recommendation = None
+
+    if request.method == 'POST':
+        form_data['height_cm'] = (request.form.get('height_cm') or '').strip()
+        form_data['weight_kg'] = (request.form.get('weight_kg') or '').strip()
+        form_data['goal_key'] = (request.form.get('goal_key') or 'wellness').strip()
+
+        try:
+            height_cm = float(form_data['height_cm'].replace(',', '.'))
+            weight_kg = float(form_data['weight_kg'].replace(',', '.'))
+        except ValueError:
+            flash('Введите корректные значения роста и веса.', 'warning')
+            return render_template(
+                'user/fitness_assistant.html',
+                title='Подбор тренировок',
+                goal_choices=goal_choices,
+                form_data=form_data,
+                recommendation=recommendation,
+            )
+
+        if height_cm < 120 or height_cm > 230 or weight_kg < 30 or weight_kg > 250:
+            flash('Укажите реалистичные параметры роста и веса.', 'warning')
+        else:
+            recommendation = build_fitness_assistant_plan(height_cm, weight_kg, form_data['goal_key'])
+            workout_type_map = {workout_type.name: workout_type.id for workout_type in WorkoutType.query.all()}
+            recommendation['recommended_workouts'] = [
+                {'name': workout_name, 'id': workout_type_map.get(workout_name)}
+                for workout_name in recommendation['recommended_types']
+                if workout_type_map.get(workout_name)
+            ]
+            current_user.fitness_goal = FITNESS_ASSISTANT_GOALS.get(
+                form_data['goal_key'],
+                FITNESS_ASSISTANT_GOALS['wellness'],
+            )['goal_text']
+            db.session.commit()
+
+    return render_template(
+        'user/fitness_assistant.html',
+        title='Подбор тренировок',
+        goal_choices=goal_choices,
+        form_data=form_data,
+        recommendation=recommendation,
     )
 
 

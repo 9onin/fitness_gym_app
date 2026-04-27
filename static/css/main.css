@@ -22,6 +22,39 @@ body.home-page main {
     border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
+.intensity-filter-panel {
+    border-radius: 0.75rem;
+}
+
+.intensity-filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.intensity-filter-btn {
+    min-width: 6.5rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.88);
+    color: #4338ca;
+    font-weight: 600;
+    transition: all 150ms ease;
+}
+
+.intensity-filter-btn:hover {
+    background: #eef2ff;
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.intensity-filter-btn.is-active {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(67, 56, 202, 0.22);
+}
+
 .energy-meter {
     display: inline-flex;
     align-items: center;

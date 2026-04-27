@@ -23,10 +23,25 @@
     <section class="mb-12">
         <h2 class="text-3xl font-bold mb-6 text-center">Наши тренировки</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="homepage-panel intensity-filter-panel p-4 md:p-5 mb-6">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">Интенсивность</p>
+                    <p class="text-sm text-gray-600">Выберите, насколько энергозатратную тренировку хотите посмотреть.</p>
+                </div>
+                <div class="intensity-filter-controls" data-intensity-filter>
+                    <button type="button" class="intensity-filter-btn is-active" data-level="all">Все</button>
+                    <button type="button" class="intensity-filter-btn" data-level="1">Легкие</button>
+                    <button type="button" class="intensity-filter-btn" data-level="2">Средние</button>
+                    <button type="button" class="intensity-filter-btn" data-level="3">Тяжелые</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-workout-grid>
             {% for workout_type in workout_types %}
                 {% set energy_level = energy_levels.get(workout_type.name, 2) %}
-                <div class="homepage-panel rounded-lg shadow-md overflow-hidden">
+                <div class="homepage-panel rounded-lg shadow-md overflow-hidden workout-card" data-energy-level="{{ energy_level }}">
                     <div class="p-6">
                         <h3 class="text-xl font-bold mb-2">{{ workout_type.name }}</h3>
                         <div class="energy-meter energy-level-{{ energy_level }} mb-3" aria-label="Уровень нагрузки {{ energy_level }} из 3">
@@ -44,6 +59,10 @@
                     </div>
                 </div>
             {% endfor %}
+        </div>
+
+        <div class="homepage-panel p-6 text-center hidden" data-empty-intensity-state>
+            <p class="text-gray-700 font-semibold">Под выбранную интенсивность пока нет тренировок.</p>
         </div>
     </section>
 
@@ -126,4 +145,50 @@
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const filterRoot = document.querySelector('[data-intensity-filter]');
+            const cards = Array.from(document.querySelectorAll('[data-energy-level]'));
+            const emptyState = document.querySelector('[data-empty-intensity-state]');
+            const grid = document.querySelector('[data-workout-grid]');
+
+            if (!filterRoot || !cards.length || !emptyState || !grid) {
+                return;
+            }
+
+            const buttons = Array.from(filterRoot.querySelectorAll('[data-level]'));
+
+            function applyFilter(level) {
+                let visibleCount = 0;
+
+                cards.forEach(function (card) {
+                    const cardLevel = card.getAttribute('data-energy-level');
+                    const isVisible = level === 'all' || cardLevel === level;
+                    card.classList.toggle('hidden', !isVisible);
+                    if (isVisible) {
+                        visibleCount += 1;
+                    }
+                });
+
+                emptyState.classList.toggle('hidden', visibleCount > 0);
+                grid.classList.toggle('hidden', visibleCount === 0);
+            }
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const level = button.getAttribute('data-level');
+
+                    buttons.forEach(function (item) {
+                        item.classList.toggle('is-active', item === button);
+                    });
+
+                    applyFilter(level);
+                });
+            });
+        });
+    </script>
 {% endblock %}

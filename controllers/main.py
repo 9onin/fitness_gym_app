@@ -62,6 +62,15 @@ def index():
     upcoming_workouts = Workout.query.order_by(Workout.start_time).limit(5).all()
     workout_types = WorkoutType.query.all()
     smart_profile = build_client_intelligence(current_user) if current_user.is_authenticated else None
+    recommended_workouts = []
+
+    if smart_profile:
+        workout_type_map = {workout_type.name: workout_type.id for workout_type in workout_types}
+        recommended_workouts = [
+            {'name': workout_name, 'id': workout_type_map.get(workout_name)}
+            for workout_name in smart_profile['recommended_types']
+            if workout_type_map.get(workout_name)
+        ]
 
     return render_template(
         'index.html',
@@ -71,4 +80,5 @@ def index():
         energy_levels=ENERGY_LEVELS,
         workout_summaries=WORKOUT_SUMMARIES,
         smart_profile=smart_profile,
+        recommended_workouts=recommended_workouts,
     )

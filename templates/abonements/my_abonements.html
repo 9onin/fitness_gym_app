@@ -3,141 +3,255 @@
 {% block title %}Мои абонементы - Fitness Gym{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <header class="header">
-            <h1>Мои абонементы</h1>
-            <p class="subtitle">Продление, заморозка и уведомления по вашим тренировкам и абонементам.</p>
-        </header>
+    {% set stats = namespace(active=0, frozen=0, unlimited=0) %}
+    {% for ua in user_abonements %}
+        {% if ua.is_frozen %}
+            {% set stats.frozen = stats.frozen + 1 %}
+        {% elif ua.is_valid %}
+            {% set stats.active = stats.active + 1 %}
+        {% endif %}
+        {% if ua.visits_remaining is none %}
+            {% set stats.unlimited = stats.unlimited + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="space-y-8">
+        <section class="overflow-hidden rounded-[28px] bg-gradient-to-br from-indigo-700 via-indigo-600 to-sky-500 text-white shadow-xl">
+            <div class="grid gap-8 px-6 py-8 md:grid-cols-[1.3fr_0.7fr] md:px-8 md:py-9">
+                <div>
+                    <span class="inline-flex rounded-full bg-white/16 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-50">
+                        Личный кабинет
+                    </span>
+                    <h1 class="mt-4 text-3xl font-semibold leading-tight md:text-4xl">Мои абонементы</h1>
+                    <p class="mt-3 max-w-2xl text-sm leading-6 text-indigo-50/90 md:text-base">
+                        Здесь собраны активные пакеты, срок действия, история оплат и быстрые действия по продлению или заморозке.
+                    </p>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-3 md:grid-cols-1">
+                    <div class="rounded-2xl border border-white/18 bg-white/12 px-4 py-4 backdrop-blur-sm">
+                        <div class="text-xs uppercase tracking-[0.14em] text-indigo-100/80">Активные</div>
+                        <div class="mt-2 text-3xl font-semibold">{{ stats.active }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-white/18 bg-white/12 px-4 py-4 backdrop-blur-sm">
+                        <div class="text-xs uppercase tracking-[0.14em] text-indigo-100/80">На паузе</div>
+                        <div class="mt-2 text-3xl font-semibold">{{ stats.frozen }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-white/18 bg-white/12 px-4 py-4 backdrop-blur-sm">
+                        <div class="text-xs uppercase tracking-[0.14em] text-indigo-100/80">Оплаты</div>
+                        <div class="mt-2 text-3xl font-semibold">{{ payment_history|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         {% if abonement_notifications or workout_notifications %}
-        <div class="mb-8 space-y-3">
+        <section class="grid gap-3 lg:grid-cols-2">
             {% for notification in abonement_notifications %}
-            <div class="rounded-2xl border px-5 py-4 {% if notification.level == 'warning' %}border-amber-200 bg-amber-50 text-amber-900{% else %}border-blue-200 bg-blue-50 text-blue-900{% endif %}">
-                <div class="font-semibold">{{ notification.title }}</div>
-                <div class="mt-1 text-sm">{{ notification.text }}</div>
+            <div class="rounded-3xl border px-5 py-4 shadow-sm {% if notification.level == 'warning' %}border-amber-200 bg-amber-50 text-amber-950{% else %}border-sky-200 bg-sky-50 text-sky-950{% endif %}">
+                <div class="text-sm font-semibold">{{ notification.title }}</div>
+                <div class="mt-1 text-sm leading-6">{{ notification.text }}</div>
             </div>
             {% endfor %}
 
             {% for notification in workout_notifications %}
-            <div class="rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-indigo-900">
-                <div class="font-semibold">{{ notification.title }}</div>
-                <div class="mt-1 text-sm">{{ notification.text }}</div>
+            <div class="rounded-3xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-indigo-950 shadow-sm">
+                <div class="text-sm font-semibold">{{ notification.title }}</div>
+                <div class="mt-1 text-sm leading-6">{{ notification.text }}</div>
             </div>
             {% endfor %}
-        </div>
+        </section>
         {% endif %}
 
-        <div class="abonements-grid">
+        {% if user_abonements %}
+        <section class="grid gap-6 xl:grid-cols-2">
             {% for ua in user_abonements %}
-            <div class="abonement-card" style="border-top: 4px solid {{ ua.abonement.color }}">
-                <div class="card-header">
-                    <h2>{{ ua.abonement.name }}</h2>
-                    <p class="description">{{ ua.abonement.description }}</p>
-                </div>
+            {% set progress_percent = 0 %}
+            {% if ua.visits_remaining is not none and ua.abonement.visits_count %}
+                {% set progress_percent = (ua.visits_used / ua.abonement.visits_count * 100)|int %}
+            {% endif %}
 
-                <div class="status-section">
-                    {% if ua.is_frozen %}
-                    <span class="status-active" style="background:#dbeafe;color:#1d4ed8;">Заморожен</span>
-                    {% elif ua.is_valid %}
-                    <span class="status-active">Активен</span>
-                    {% else %}
-                    <span class="status-expired">Недействителен</span>
-                    {% endif %}
-                </div>
+            <article class="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                <div class="h-1.5 w-full" style="background: {{ ua.abonement.color }}"></div>
+                <div class="space-y-6 p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="text-2xl font-semibold text-slate-900">{{ ua.abonement.name }}</h2>
+                                {% if ua.is_frozen %}
+                                <span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">Заморожен</span>
+                                {% elif ua.is_valid %}
+                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Активен</span>
+                                {% else %}
+                                <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Неактивен</span>
+                                {% endif %}
+                            </div>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ ua.abonement.description }}</p>
+                        </div>
 
-                <div class="info-section">
-                    <p><strong>Дата покупки:</strong> {{ ua.purchase_date.strftime('%d.%m.%Y') }}</p>
-                    <p><strong>Срок действия:</strong> до {{ ua.expiration_date.strftime('%d.%m.%Y') }}</p>
-                    <p><strong>Продлений:</strong> {{ ua.extension_count or 0 }}</p>
-                    <p><strong>Остаток заморозки:</strong> {{ ua.freeze_days_available }} дн.</p>
-
-                    {% if ua.is_frozen and ua.frozen_until %}
-                    <p><strong>Заморожен до:</strong> {{ ua.frozen_until.strftime('%d.%m.%Y') }}</p>
-                    {% elif ua.is_expired %}
-                    <p class="text-red"><strong>Истек:</strong> абонемент завершился</p>
-                    {% else %}
-                    <p><strong>Осталось дней:</strong> {{ ua.days_remaining }}</p>
-                    {% endif %}
-                </div>
-
-                <div class="visits-section">
-                    {% if ua.visits_remaining is none %}
-                    <p><strong>Посещения:</strong> <span class="text-green">Безлимит</span></p>
-                    {% else %}
-                    <p><strong>Посещения:</strong> {{ ua.visits_remaining }} / {{ ua.abonement.visits_count }}</p>
-                    <div class="progress-bar">
-                        <div class="progress" style="width: {{ (ua.visits_used / ua.abonement.visits_count * 100)|int }}%"></div>
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right sm:min-w-[150px]">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Стоимость тарифа</div>
+                            <div class="mt-2 text-2xl font-semibold text-slate-900">{{ ua.abonement.price }} ₽</div>
+                        </div>
                     </div>
-                    {% endif %}
-                </div>
 
-                <div class="mt-5 flex flex-wrap gap-2">
-                    <form action="{{ url_for('abonements.extend_abonement', user_abonement_id=ua.id) }}" method="post" class="inline">
-                        <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-                            Продлить
-                        </button>
-                    </form>
-                    {% if ua.can_freeze %}
-                    <form action="{{ url_for('abonements.freeze_abonement', user_abonement_id=ua.id) }}" method="post" class="inline">
-                        <button type="submit" class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                            Заморозить на 7 дней
-                        </button>
-                    </form>
-                    {% endif %}
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Куплен</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ ua.purchase_date.strftime('%d.%m.%Y') }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Действует до</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ ua.expiration_date.strftime('%d.%m.%Y') }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Продления</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ ua.extension_count or 0 }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Заморозка</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ ua.freeze_days_available }} дн.</div>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="text-sm font-semibold text-slate-900">Посещения</h3>
+                                {% if ua.visits_remaining is none %}
+                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Безлимит</span>
+                                {% else %}
+                                <span class="text-sm font-medium text-slate-500">{{ ua.visits_remaining }} / {{ ua.abonement.visits_count }}</span>
+                                {% endif %}
+                            </div>
+
+                            {% if ua.visits_remaining is none %}
+                            <p class="mt-3 text-sm leading-6 text-slate-600">
+                                Доступ к тренировкам без ограничения по количеству посещений в рамках срока действия.
+                            </p>
+                            {% else %}
+                            <div class="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
+                                <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-500" style="width: {{ progress_percent }}%"></div>
+                            </div>
+                            <div class="mt-3 flex items-center justify-between text-sm text-slate-500">
+                                <span>Использовано: {{ ua.visits_used }}</span>
+                                <span>Осталось: {{ ua.visits_remaining }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="rounded-3xl border border-slate-200 bg-white p-5">
+                            <h3 class="text-sm font-semibold text-slate-900">Статус абонемента</h3>
+                            {% if ua.is_frozen and ua.frozen_until %}
+                            <p class="mt-3 text-sm leading-6 text-slate-600">
+                                Абонемент поставлен на паузу до <span class="font-semibold text-slate-900">{{ ua.frozen_until.strftime('%d.%m.%Y') }}</span>.
+                            </p>
+                            {% elif ua.is_expired %}
+                            <p class="mt-3 text-sm leading-6 text-rose-600">
+                                Срок действия завершился. Можно быстро оформить продление или выбрать новый тариф.
+                            </p>
+                            {% else %}
+                            <p class="mt-3 text-sm leading-6 text-slate-600">
+                                До окончания действия осталось <span class="font-semibold text-slate-900">{{ ua.days_remaining }} дн.</span>.
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <form action="{{ url_for('abonements.extend_abonement', user_abonement_id=ua.id) }}" method="post">
+                            <button type="submit" class="inline-flex min-w-[150px] items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                                Продлить
+                            </button>
+                        </form>
+                        {% if ua.can_freeze %}
+                        <form action="{{ url_for('abonements.freeze_abonement', user_abonement_id=ua.id) }}" method="post">
+                            <button type="submit" class="inline-flex min-w-[190px] items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                                Заморозить на 7 дней
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <p>У вас пока нет абонементов</p>
-                <a href="{{ url_for('abonements.index') }}" class="btn-buy">Выбрать абонемент</a>
-            </div>
+            </article>
             {% endfor %}
-        </div>
+        </section>
+        {% else %}
+        <section class="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+            <h2 class="text-2xl font-semibold text-slate-900">У вас пока нет активных абонементов</h2>
+            <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+                Подберите тариф под свой ритм тренировок, а после покупки он сразу появится в этом разделе вместе с оплатой и сроком действия.
+            </p>
+            <div class="mt-6">
+                <a href="{{ url_for('abonements.index') }}" class="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                    Выбрать абонемент
+                </a>
+            </div>
+        </section>
+        {% endif %}
 
-        <section class="mt-10 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-            <div class="mb-5 flex items-center justify-between gap-3">
+        <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
                     <h2 class="text-2xl font-semibold text-slate-900">История оплат</h2>
-                    <p class="mt-1 text-sm text-slate-500">Здесь собраны последние покупки абонементов и детали оплаты.</p>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                        Последние покупки абонементов, статус обработки и платежные детали в одном месте.
+                    </p>
                 </div>
-                <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">{{ payment_history|length }}</span>
+                <span class="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">
+                    {{ payment_history|length }} записей
+                </span>
             </div>
 
-            <div class="space-y-4">
+            <div class="mt-6 space-y-4">
                 {% for payment in payment_history %}
-                <div class="rounded-2xl border border-slate-200 p-5">
-                    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <article class="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                            <div class="text-lg font-semibold text-slate-900">{{ payment.abonement_name }}</div>
-                            <div class="mt-1 text-sm text-slate-500">
+                            <h3 class="text-lg font-semibold text-slate-900">{{ payment.abonement_name }}</h3>
+                            <p class="mt-1 text-sm text-slate-500">
                                 Оплата от {{ payment.purchase_date.strftime('%d.%m.%Y') }}
                                 {% if payment.details.processed_at %}
                                     • {{ payment.details.processed_at.strftime('%H:%M') }}
                                 {% endif %}
-                            </div>
+                            </p>
                         </div>
-                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        <span class="inline-flex w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
                             {{ payment.details.status }}
                         </span>
                     </div>
 
-                    <div class="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-                        <div><strong>Сумма:</strong> {{ payment.details.amount }} ₽</div>
-                        <div><strong>Карта:</strong> {{ payment.details.card_mask }}</div>
-                        <div><strong>Транзакция:</strong> {{ payment.details.transaction_id }}</div>
-                        <div><strong>Провайдер:</strong> {{ payment.details.provider }}</div>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="rounded-2xl bg-white px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Сумма</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ payment.details.amount }} ₽</div>
+                        </div>
+                        <div class="rounded-2xl bg-white px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Карта</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ payment.details.card_mask }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-white px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Транзакция</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ payment.details.transaction_id }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-white px-4 py-3">
+                            <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Провайдер</div>
+                            <div class="mt-2 text-sm font-semibold text-slate-900">{{ payment.details.provider }}</div>
+                        </div>
                     </div>
-                </div>
+                </article>
                 {% else %}
-                <div class="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
-                    История платежей пока пуста. После покупки абонемента она появится здесь автоматически.
+                <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm leading-6 text-slate-500">
+                    История платежей пока пуста. После первой онлайн-покупки данные появятся здесь автоматически.
                 </div>
                 {% endfor %}
             </div>
         </section>
 
-        <div class="actions">
-            <a href="{{ url_for('abonements.index') }}" class="btn-details">Выбрать новый абонемент</a>
+        <div class="flex justify-end">
+            <a href="{{ url_for('abonements.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                Выбрать новый абонемент
+            </a>
         </div>
     </div>
 {% endblock %}

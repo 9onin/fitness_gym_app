@@ -2,84 +2,87 @@ from app import create_app
 from models.database import db
 from models.models import Abonement
 
+
 app = create_app()
+
+
+CATALOG = [
+    {
+        'name': 'Пробный старт',
+        'type': 'trial',
+        'price': 990,
+        'duration_days': 7,
+        'visits_count': 3,
+        'description': 'Неделя, чтобы познакомиться с клубом, тренерами и вашим будущим ритмом занятий.',
+        'features': '3 посещения в любые будние дни\nВводная консультация тренера\nПервичная диагностика состава тела\nДоступ в тренажерный зал и кардиозону\nГрупповые занятия начального уровня',
+        'color': '#22c55e',
+        'is_popular': False,
+        'discount': 0,
+        'is_active': True,
+    },
+    {
+        'name': 'Базовый безлимит',
+        'type': 'basic',
+        'price': 3990,
+        'duration_days': 30,
+        'visits_count': 0,
+        'description': 'Комфортный месячный тариф для тех, кто хочет тренироваться регулярно и без ограничений.',
+        'features': 'Безлимитное посещение клуба\nВсе тренажерные зоны и кардиопространство\nГрупповые занятия по расписанию\nДоступ в раздевалки и душевые\nОдна персональная консультация в месяц',
+        'color': '#4f46e5',
+        'is_popular': True,
+        'discount': 10,
+        'is_active': True,
+    },
+    {
+        'name': 'VIP Премиум',
+        'type': 'vip',
+        'price': 8990,
+        'duration_days': 30,
+        'visits_count': 0,
+        'description': 'Премиальный формат с персональным сопровождением и расширенным набором восстановительных услуг.',
+        'features': 'Безлимит на все зоны клуба\n2 персональные тренировки в подарок\nVIP-раздевалка и полотенца\nДоступ в SPA, хаммам и сауну\nПриоритетная запись на популярные тренировки',
+        'color': '#7c3aed',
+        'is_popular': False,
+        'discount': 15,
+        'is_active': True,
+    },
+    {
+        'name': 'Пакет 10 тренировок',
+        'type': 'package',
+        'price': 4990,
+        'duration_days': 60,
+        'visits_count': 10,
+        'description': 'Гибкий пакет для тех, кто тренируется в удобном темпе и не хочет переплачивать за безлимит.',
+        'features': '10 посещений в течение 60 дней\nДоступ ко всем зонам клуба\nГрупповые занятия включены\nЗаморозка до 7 дней\nЭлектронный трекер остатка посещений',
+        'color': '#f59e0b',
+        'is_popular': False,
+        'discount': 0,
+        'is_active': True,
+    },
+    {
+        'name': 'Пакет 20 тренировок',
+        'type': 'package',
+        'price': 8990,
+        'duration_days': 90,
+        'visits_count': 20,
+        'description': 'Выгодный пакет для стабильных тренировок несколько раз в неделю с хорошей ценой за визит.',
+        'features': '20 посещений в течение 90 дней\nВсе тренировочные зоны и групповые классы\nПриоритет на вечерние слоты\nРасширенная заморозка до 14 дней\nБонусная консультация по тренировочному плану',
+        'color': '#ec4899',
+        'is_popular': False,
+        'discount': 10,
+        'is_active': True,
+    },
+]
+
 
 with app.app_context():
     db.create_all()
-    
+
     if Abonement.query.count() == 0:
-        abonements = [
-            Abonement(
-                name="Пробный",
-                type="trial",
-                price=990,
-                duration_days=7,
-                visits_count=3,
-                description="Идеально для знакомства с клубом",
-                features="3 персональные тренировки\nКонсультация тренера\nСоставление программы питания\nФитнес-тестирование\nДоступ в раздевалку\nБутилированная вода",
-                color="#4CAF50",
-                is_popular=False,
-                discount=0,
-                is_active=True
-            ),
-            Abonement(
-                name="Базовый",
-                type="basic",
-                price=3990,
-                duration_days=30,
-                visits_count=0,
-                description="Оптимальный выбор для регулярных тренировок",
-                features="Безлимитное посещение\nВсе тренажерные зоны\nГрупповые занятия\nКардиозона\nСолярий (5 мин/день)\nSPA-зона\nПолотенца в подарок\nФитнес-браслет",
-                color="#2196F3",
-                is_popular=True,
-                discount=15,
-                is_active=True
-            ),
-            Abonement(
-                name="VIP",
-                type="vip",
-                price=8990,
-                duration_days=30,
-                visits_count=0,
-                description="Максимальный комфорт и премиум-услуги",
-                features="Безлимитное посещение\nПерсональный тренер\nVIP-раздевалка\nМассаж (4 сеанса)\nSPA-комплекс\nБассейн\nХамам и сауна\nФитнес-бар (напитки включены)\nПарковка\nГостевые визиты (2 в месяц)",
-                color="#9C27B0",
-                is_popular=False,
-                discount=20,
-                is_active=True
-            ),
-            Abonement(
-                name="Пакет 10",
-                type="package",
-                price=4990,
-                duration_days=60,
-                visits_count=10,
-                description="10 тренировок с гибким графиком",
-                features="10 тренировок\nДоступ ко всем зонам\nГрупповые занятия\nЛокер\nПолотенце",
-                color="#FF9800",
-                is_popular=False,
-                discount=0,
-                is_active=True
-            ),
-            Abonement(
-                name="Пакет 20",
-                type="package",
-                price=8990,
-                duration_days=90,
-                visits_count=20,
-                description="20 тренировок - выгодное предложение",
-                features="20 тренировок\nДоступ ко всем зонам\nГрупповые занятия\nVIP-локер\nПолотенце\nФитнес-ко��сультация",
-                color="#E91E63",
-                is_popular=False,
-                discount=10,
-                is_active=True
-            ),
-        ]
-        
-        for a in abonements:
-            db.session.add(a)
-        
+        for item in CATALOG:
+            db.session.add(Abonement(**item))
+
         db.session.commit()
-        print(f"Добавлено {len(abonements)} абонементов")
+        print(f'Добавлено {len(CATALOG)} абонементов')
     else:
-        print(f"Уже есть {Abonement.query.count()} абонементов")
+        print(f'Уже есть {Abonement.query.count()} абонементов')

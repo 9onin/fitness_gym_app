@@ -1,66 +1,245 @@
-from flask import Blueprint, render_template, jsonify, request, redirect, url_for, flash
-from flask_login import login_required, current_user
-from models.models import Abonement, UserAbonement
-from models.database import db
 from datetime import datetime, timedelta
+
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
+from forms.payment_forms import AbonementPaymentForm
+from models.database import db
+from models.models import Abonement, UserAbonement
+from payment import PaymentValidationError, TestPaymentProcessor
 
 
 abonements_bp = Blueprint('abonements', __name__)
 
 
+ABONEMENT_CATALOG = [
+    {
+        'slug': 'trial',
+        'name': 'Пробный старт',
+        'type': 'trial',
+        'price': 990,
+        'duration_days': 7,
+        'visits_count': 3,
+        'description': 'Неделя, чтобы познакомиться с клубом, тренерами и вашим будущим ритмом занятий.',
+        'summary': 'Лучший вариант, чтобы попробовать клуб без долгих обязательств.',
+        'features': [
+            '3 посещения в любые будние дни',
+            'Вводная консультация тренера',
+            'Первичная диагностика состава тела',
+            'Доступ в тренажерный зал и кардиозону',
+            'Групповые занятия начального уровня',
+        ],
+        'color': '#22c55e',
+        'is_popular': False,
+        'discount': 0,
+        'is_active': True,
+        'type_label': 'Пробный',
+        'accent': 'Попробовать клуб',
+    },
+    {
+        'slug': 'basic',
+        'name': 'Базовый безлимит',
+        'type': 'basic',
+        'price': 3990,
+        'duration_days': 30,
+        'visits_count': 0,
+        'description': 'Комфортный месячный тариф для тех, кто хочет тренироваться регулярно и без ограничений.',
+        'summary': 'Универсальный абонемент на каждый день и любой тип тренировки.',
+        'features': [
+            'Безлимитное посещение клуба',
+            'Все тренажерные зоны и кардиопространство',
+            'Групповые занятия по расписанию',
+            'Доступ в раздевалки и душевые',
+            'Одна персональная консультация в месяц',
+        ],
+        'color': '#4f46e5',
+        'is_popular': True,
+        'discount': 10,
+        'is_active': True,
+        'type_label': 'Базовый',
+        'accent': 'Самый популярный выбор',
+    },
+    {
+        'slug': 'vip',
+        'name': 'VIP Премиум',
+        'type': 'vip',
+        'price': 8990,
+        'duration_days': 30,
+        'visits_count': 0,
+        'description': 'Премиальный формат с персональным сопровождением и расширенным набором восстановительных услуг.',
+        'summary': 'Максимум комфорта, приватности и персонального внимания.',
+        'features': [
+            'Безлимит на все зоны клуба',
+            '2 персональные тренировки в подарок',
+            'VIP-раздевалка и полотенца',
+            'Доступ в SPA, хаммам и сауну',
+            'Приоритетная запись на популярные тренировки',
+        ],
+        'color': '#7c3aed',
+        'is_popular': False,
+        'discount': 15,
+        'is_active': True,
+        'type_label': 'Премиум',
+        'accent': 'Для максимального комфорта',
+    },
+    {
+        'slug': 'package-10',
+        'name': 'Пакет 10 тренировок',
+        'type': 'package',
+        'price': 4990,
+        'duration_days': 60,
+        'visits_count': 10,
+        'description': 'Гибкий пакет для тех, кто тренируется в удобном темпе и не хочет переплачивать за безлимит.',
+        'summary': 'Подходит для спокойного режима занятий 1-2 раза в неделю.',
+        'features': [
+            '10 посещений в течение 60 дней',
+            'Доступ ко всем зонам клуба',
+            'Групповые занятия включены',
+            'Заморозка до 7 дней',
+            'Электронный трекер остатка посещений',
+        ],
+        'color': '#f59e0b',
+        'is_popular': False,
+        'discount': 0,
+        'is_active': True,
+        'type_label': 'Пакет',
+        'accent': 'Гибкий график',
+    },
+    {
+        'slug': 'package-20',
+        'name': 'Пакет 20 тренировок',
+        'type': 'package',
+        'price': 8990,
+        'duration_days': 90,
+        'visits_count': 20,
+        'description': 'Выгодный пакет для стабильных тренировок несколько раз в неделю с хорошей ценой за визит.',
+        'summary': 'Рациональный выбор для тех, кто уже вошел в тренировочный ритм.',
+        'features': [
+            '20 посещений в течение 90 дней',
+            'Все тренировочные зоны и групповые классы',
+            'Приоритет на вечерние слоты',
+            'Расширенная заморозка до 14 дней',
+            'Бонусная консультация по тренировочному плану',
+        ],
+        'color': '#ec4899',
+        'is_popular': False,
+        'discount': 10,
+        'is_active': True,
+        'type_label': 'Пакет',
+        'accent': 'Самая выгодная цена за визит',
+    },
+]
+
+
+def sync_abonement_catalog():
+    existing = Abonement.query.all()
+    changed = False
+
+    def find_match(spec):
+        for abonement in existing:
+            if spec['slug'] == 'package-10' and abonement.type == 'package' and abonement.visits_count == 10:
+                return abonement
+            if spec['slug'] == 'package-20' and abonement.type == 'package' and abonement.visits_count == 20:
+                return abonement
+            if spec['slug'] not in ('package-10', 'package-20') and abonement.type == spec['type']:
+                return abonement
+        return None
+
+    for spec in ABONEMENT_CATALOG:
+        abonement = find_match(spec)
+        if abonement is None:
+            abonement = Abonement()
+            db.session.add(abonement)
+            existing.append(abonement)
+            changed = True
+
+        features_text = '\n'.join(spec['features'])
+        for field in ('name', 'type', 'price', 'duration_days', 'visits_count', 'description', 'color', 'is_popular', 'discount', 'is_active'):
+            if getattr(abonement, field) != spec[field]:
+                setattr(abonement, field, spec[field])
+                changed = True
+
+        if abonement.features != features_text:
+            abonement.features = features_text
+            changed = True
+
+    if changed:
+        db.session.commit()
+
+
+def build_abonement_view(abonement):
+    spec = next((item for item in ABONEMENT_CATALOG if item['name'] == abonement.name), None)
+    features = spec['features'] if spec else abonement.features_list
+
+    return {
+        'id': abonement.id,
+        'name': abonement.name,
+        'type': abonement.type,
+        'type_label': spec['type_label'] if spec else 'Абонемент',
+        'accent': spec['accent'] if spec else 'Удобный формат для тренировок',
+        'summary': spec['summary'] if spec else abonement.description,
+        'description': abonement.description,
+        'price': abonement.price,
+        'final_price': abonement.final_price,
+        'duration_days': abonement.duration_days,
+        'duration_text': abonement.duration_text,
+        'visits_count': abonement.visits_count,
+        'visits_text': abonement.visits_text,
+        'price_per_visit': abonement.price_per_visit,
+        'features': features,
+        'color': abonement.color,
+        'is_popular': abonement.is_popular,
+        'discount': abonement.discount,
+    }
+
+
 @abonements_bp.route('/')
 def index():
-    """Главная страница со всеми абонементами"""
-    abonements = Abonement.query.filter_by(is_active=True).all()
-    return render_template('abonements/index.html',
-                       abonements=abonements,
-                       title="Наши абонементы")
+    sync_abonement_catalog()
+    abonements = [build_abonement_view(item) for item in Abonement.query.filter_by(is_active=True).all()]
+    return render_template('abonements/index.html', abonements=abonements, title='Наши абонементы')
 
 
 @abonements_bp.route('/abonement/<int:abonement_id>')
 def abonement_detail(abonement_id):
-    """Детальная страница абонемента"""
+    sync_abonement_catalog()
     abonement = Abonement.query.get_or_404(abonement_id)
-    return render_template('abonements/abonement_detail.html',
-                       abonement=abonement,
-                       title=abonement.name)
+    return render_template('abonements/abonement_detail.html', abonement=build_abonement_view(abonement), title=abonement.name)
 
 
 @abonements_bp.route('/api/abonements')
 def api_abonements():
-    """API для получения списка абонементов в JSON"""
+    sync_abonement_catalog()
     abonements = Abonement.query.filter_by(is_active=True).all()
-    return jsonify([a.to_dict() for a in abonements])
+    return jsonify([build_abonement_view(item) for item in abonements])
 
 
 @abonements_bp.route('/api/abonement/<int:abonement_id>')
 def api_abonement_detail(abonement_id):
-    """API для получения деталей абонемента"""
+    sync_abonement_catalog()
     abonement = Abonement.query.get_or_404(abonement_id)
-    return jsonify(abonement.to_dict())
+    return jsonify(build_abonement_view(abonement))
 
 
 @abonements_bp.route('/compare')
 def compare_abonements():
-    """Страница сравнения абонементов"""
-    abonements = Abonement.query.filter_by(is_active=True).all()
+    sync_abonement_catalog()
+    views = [build_abonement_view(item) for item in Abonement.query.filter_by(is_active=True).all()]
     comparison = {}
-    for a in abonements:
-        comparison[a.name] = {
-            'Цена': f"{a.final_price} ₽",
-            'Длительность': a.duration_text,
-            'Посещения': a.visits_text,
-            'Цена за визит': f"{a.price_per_visit} ₽" if a.price_per_visit > 0 else "—",
-            'Скидка': f"{a.discount}%" if a.discount > 0 else "—"
+    for item in views:
+        comparison[item['name']] = {
+            'Цена': f"{item['final_price']} ₽",
+            'Длительность': item['duration_text'],
+            'Посещения': item['visits_text'],
+            'Цена за визит': f"{item['price_per_visit']} ₽" if item['price_per_visit'] > 0 else '—',
+            'Скидка': f"{item['discount']}%" if item['discount'] > 0 else '—',
         }
-    return render_template('abonements/compare.html',
-                       comparison=comparison,
-                       title="Сравнение абонементов")
+    return render_template('abonements/compare.html', comparison=comparison, title='Сравнение абонементов')
 
 
 @abonements_bp.route('/filter', methods=['POST'])
 def filter_abonements():
-    """Фильтрация абонементов"""
+    sync_abonement_catalog()
     filter_type = request.json.get('type', 'all')
 
     if filter_type == 'all':
@@ -68,51 +247,64 @@ def filter_abonements():
     else:
         abonements = Abonement.query.filter_by(is_active=True, type=filter_type).all()
 
-    return jsonify([a.to_dict() for a in abonements])
+    return jsonify([build_abonement_view(item) for item in abonements])
 
 
 @abonements_bp.route('/buy/<int:abonement_id>', methods=['GET', 'POST'])
 @login_required
 def buy_abonement(abonement_id):
-    """Страница покупки абонемента"""
-    abonement = Abonement.query.get_or_404(abonement_id)
-    
-    if request.method == 'POST':
-        user_plan = current_user.email
-        
-        if user_plan == 'simulate':
-            flash('Это симуляция оплаты', 'info')
-        
-        expiration_date = datetime.utcnow() + timedelta(days=abonement.duration_days)
-        
+    sync_abonement_catalog()
+    abonement_model = Abonement.query.get_or_404(abonement_id)
+    abonement = build_abonement_view(abonement_model)
+    form = AbonementPaymentForm()
+
+    if form.validate_on_submit():
+        processor = TestPaymentProcessor()
+
+        try:
+            payment_result = processor.process_test_payment(
+                amount=abonement['final_price'],
+                user_id=current_user.id,
+                card_number=form.card_number.data,
+                cardholder_name=form.cardholder_name.data,
+                expiry_month=form.expiry_month.data,
+                expiry_year=form.expiry_year.data,
+                cvv=form.cvv.data,
+            )
+        except PaymentValidationError as error:
+            form.card_number.errors.append(str(error))
+            return render_template('abonements/buy.html', abonement=abonement, form=form, title=f"Купить {abonement['name']}")
+
+        expiration_date = datetime.utcnow() + timedelta(days=abonement['duration_days'])
         user_abonement = UserAbonement(
             user_id=current_user.id,
-            abonement_id=abonement.id,
+            abonement_id=abonement_model.id,
             purchase_date=datetime.utcnow(),
             expiration_date=expiration_date,
-            visits_remaining=abonement.visits_count if abonement.visits_count > 0 else None,
+            visits_remaining=abonement['visits_count'] if abonement['visits_count'] > 0 else None,
             is_active=True,
-            payment_info=f"Payment: {abonement.final_price} RUB"
+            payment_info=(
+                f"online-test:{payment_result['transaction_id']};"
+                f"amount={payment_result['amount']};"
+                f"card=****{payment_result['card_last4']};"
+                f"processed_at={payment_result['processed_at']}"
+            ),
         )
-        
+
         db.session.add(user_abonement)
         db.session.commit()
-        
-        flash(f'Абонемент "{abonement.name}" успешно приобретен!', 'success')
-        return redirect(url_for('user.my_abonements'))
-    
-    return render_template('abonements/buy.html',
-                         abonement=abonement,
-                         title=f"Купить {abonement.name}")
+
+        flash(f'Онлайн-оплата прошла успешно. Абонемент "{abonement["name"]}" уже активирован!', 'success')
+        return redirect(url_for('abonements.my_abonements'))
+
+    return render_template('abonements/buy.html', abonement=abonement, form=form, title=f"Купить {abonement['name']}")
 
 
 @abonements_bp.route('/my')
 @login_required
 def my_abonements():
-    """Мои абонементы пользователя"""
+    sync_abonement_catalog()
     user_abonements = UserAbonement.query.filter_by(user_id=current_user.id).order_by(
         UserAbonement.purchase_date.desc()
     ).all()
-    return render_template('abonements/my_abonements.html',
-                       user_abonements=user_abonements,
-                       title="Мои абонементы")
+    return render_template('abonements/my_abonements.html', user_abonements=user_abonements, title='Мои абонементы')

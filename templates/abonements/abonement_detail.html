@@ -3,88 +3,102 @@
 {% block title %}{{ abonement.name }} - Fitness Gym{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-
+<div class="max-w-6xl mx-auto">
     <a href="{{ url_for('abonements.index') }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 mb-6 text-sm font-medium">
         ← Вернуться к списку
     </a>
 
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6" style="border-top: 5px solid {{ abonement.color }}">
-        <div class="p-8">
-
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ abonement.name }}</h1>
-
-                <div class="flex items-end justify-center gap-3 mb-2">
-                    {% if abonement.discount > 0 %}
-                    <span class="text-gray-400 line-through text-xl">{{ abonement.price }} ₽</span>
-                    <span class="text-5xl font-bold text-gray-800">{{ abonement.final_price }} ₽</span>
-                    <span class="bg-red-500 text-white text-sm font-semibold px-3 py-1 rounded-full self-center">-{{ abonement.discount }}%</span>
-                    {% else %}
-                    <span class="text-5xl font-bold text-gray-800">{{ abonement.price }} ₽</span>
-                    {% endif %}
+    <div class="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-6">
+        <section class="bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100" style="border-top: 5px solid {{ abonement.color }}">
+            <div class="p-8 md:p-10">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
+                    <div class="max-w-2xl">
+                        <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 mb-4">{{ abonement.type_label }}</span>
+                        <h1 class="text-4xl font-bold text-gray-900 mb-3">{{ abonement.name }}</h1>
+                        <p class="text-lg text-gray-600 leading-relaxed">{{ abonement.summary }}</p>
+                    </div>
+                    <div class="min-w-[220px] rounded-3xl bg-gray-50 p-6 text-center">
+                        {% if abonement.discount > 0 %}
+                            <div class="text-gray-400 line-through text-lg">{{ abonement.price }} ₽</div>
+                            <div class="text-5xl font-bold text-gray-900 leading-none my-2">{{ abonement.final_price }} ₽</div>
+                            <div class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">Скидка {{ abonement.discount }}%</div>
+                        {% else %}
+                            <div class="text-5xl font-bold text-gray-900 leading-none my-2">{{ abonement.price }} ₽</div>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <div class="flex justify-center gap-6 text-gray-500 text-sm">
-                    <span>{{ abonement.duration_text }}</span>
-                    <span>{{ abonement.visits_text }}</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Срок действия</div>
+                        <div class="text-xl font-semibold text-slate-800">{{ abonement.duration_text }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Посещения</div>
+                        <div class="text-xl font-semibold text-slate-800">{{ abonement.visits_text }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Цена за визит</div>
+                        <div class="text-xl font-semibold text-slate-800">
+                            {% if abonement.price_per_visit > 0 %}
+                                {{ abonement.price_per_visit }} ₽
+                            {% else %}
+                                Безлимит
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-6">
+                    <div class="rounded-3xl bg-gray-50 p-6">
+                        <h3 class="font-semibold text-gray-900 mb-3">О формате абонемента</h3>
+                        <p class="text-gray-600 leading-relaxed">{{ abonement.description }}</p>
+                    </div>
+                    <div class="rounded-3xl bg-gray-50 p-6">
+                        <h3 class="font-semibold text-gray-900 mb-4">Что входит</h3>
+                        <ul class="space-y-2">
+                            {% for feature in abonement.features %}
+                            <li class="flex items-start gap-2 text-sm text-gray-600">
+                                <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
+                                <span>{{ feature }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div class="mb-6">
-                <h3 class="font-semibold text-gray-700 mb-2">Описание</h3>
-                <p class="text-gray-600 leading-relaxed">{{ abonement.description }}</p>
-            </div>
+        <aside class="space-y-6">
+            <div class="bg-white rounded-3xl shadow-md border border-gray-100 p-6">
+                <div class="text-sm font-semibold mb-2" style="color: {{ abonement.color }}">{{ abonement.accent }}</div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Готово к покупке</h3>
+                <p class="text-gray-600 mb-5">Абонемент активируется сразу после оплаты и появится в вашем личном кабинете.</p>
 
-            <div class="mb-6">
-                <h3 class="font-semibold text-gray-700 mb-3">Что включено</h3>
-                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {% for feature in abonement.features_list %}
-                    <li class="flex items-start gap-2 text-sm text-gray-600">
-                        <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
-                        <span>{{ feature }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            {% if abonement.price_per_visit > 0 %}
-            <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                <h3 class="font-semibold text-green-800 mb-2">Выгода</h3>
-                <p class="text-green-700 text-sm">Цена одной тренировки: <strong>{{ abonement.price_per_visit }} ₽</strong></p>
-                <p class="text-green-700 text-sm">Экономия по сравнению с разовыми посещениями:
-                    <strong>{{ (500 - abonement.price_per_visit) * abonement.visits_count }} ₽</strong>
-                </p>
-            </div>
-            {% endif %}
-
-            <div class="flex gap-3 flex-col sm:flex-row">
                 <a href="{{ url_for('abonements.buy_abonement', abonement_id=abonement.id) }}"
-                   class="flex-1 text-center py-3.5 rounded-xl text-white font-bold text-lg hover:opacity-90 transition-opacity"
+                   class="block text-center py-3.5 rounded-2xl text-white font-bold text-lg hover:opacity-90 transition-opacity"
                    style="background-color: {{ abonement.color }}">
                     Купить абонемент
                 </a>
-                <button onclick="showConsultation()"
-                        class="flex-1 py-3.5 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors">
-                    Получить консультацию
-                </button>
             </div>
-        </div>
+
+            <div class="bg-white rounded-3xl shadow-md border border-gray-100 p-6">
+                <h3 class="font-semibold text-gray-900 mb-3">Почему это удобно</h3>
+                <ul class="space-y-3 text-sm text-gray-600">
+                    <li>Онлайн-оформление без звонков и ожидания.</li>
+                    <li>Абонемент сразу активируется после оплаты.</li>
+                    <li>История покупок и срок действия доступны в личном кабинете.</li>
+                </ul>
+            </div>
+
+            <div class="rounded-3xl border border-indigo-100 bg-indigo-50 p-6">
+                <h3 class="font-semibold text-indigo-900 mb-2">Нужна помощь с выбором?</h3>
+                <p class="text-sm text-indigo-800 mb-4">Сравните тарифы между собой или начните с пробного формата, если хотите оценить клуб вживую.</p>
+                <a href="{{ url_for('abonements.compare_abonements') }}" class="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                    Сравнить абонементы
+                </a>
+            </div>
+        </aside>
     </div>
-
 </div>
-
-<div id="consultation-toast" class="hidden fixed bottom-6 right-6 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-lg text-sm z-50">
-    Заявка отправлена — менеджер свяжется с вами!
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-function showConsultation() {
-    const toast = document.getElementById('consultation-toast');
-    toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3500);
-}
-</script>
 {% endblock %}

@@ -10,6 +10,14 @@ from functools import wraps
 # Создание блюпринта для административных маршрутов
 admin_bp = Blueprint('admin', __name__)
 
+CLIENT_STATUS_CHOICES = [
+    ('new', 'Новый'),
+    ('active', 'Активный'),
+    ('frozen', 'Заморожен'),
+    ('inactive', 'Неактивный'),
+    ('vip', 'VIP'),
+]
+
 def admin_required(f):
     """
     Декоратор для проверки прав администратора
@@ -407,6 +415,54 @@ def users():
     return render_template('admin/users/index.html',
                          title='Пользователи',
                          users=all_users)
+
+@admin_bp.route('/users/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def user_detail(user_id):
+    """
+    РљР°СЂС‚РѕС‡РєР° РєР»РёРµРЅС‚Р° РґР»СЏ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°
+    """
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        user.phone = (request.form.get('phone') or '').strip() or None
+        user.client_status = request.form.get('client_status', 'new')
+        user.fitness_goal = (request.form.get('fitness_goal') or '').strip() or None
+        user.manager_notes = (request.form.get('manager_notes') or '').strip() or None
+
+        db.session.commit()
+        flash('Карточка клиента обновлена', 'success')
+        return redirect(url_for('admin.user_detail', user_id=user.id))
+
+    bookings = (
+        Booking.query.join(Workout)
+        .filter(Booking.user_id == user.id)
+        .order_by(Workout.start_time.desc())
+        .all()
+    )
+    abonements = (
+        UserAbonement.query.filter_by(user_id=user.id)
+        .order_by(UserAbonement.purchase_date.desc())
+        .all()
+    )
+
+    now = datetime.utcnow()
+    upcoming_bookings = [booking for booking in bookings if booking.workout.start_time >= now]
+    past_bookings = [booking for booking in bookings if booking.workout.start_time < now]
+    active_abonements = [abonement for abonement in abonements if abonement.is_valid]
+
+    return render_template(
+        'admin/users/detail.html',
+        title='Карточка клиента',
+        user=user,
+        bookings=bookings,
+        upcoming_bookings=upcoming_bookings,
+        past_bookings=past_bookings,
+        abonements=abonements,
+        active_abonements=active_abonements,
+        status_choices=CLIENT_STATUS_CHOICES,
+    )
 
 @admin_bp.route('/users/make-admin/<int:user_id>', methods=['POST'])
 @login_required

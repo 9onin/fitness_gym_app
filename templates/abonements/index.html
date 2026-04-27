@@ -3,60 +3,76 @@
 {% block title %}Абонементы - Fitness Gym{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
-
+<div class="max-w-7xl mx-auto">
     <div class="text-center mb-10">
-        <h1 class="text-4xl font-bold text-gray-800 mb-2">Выберите свой абонемент</h1>
-        <p class="text-gray-500 text-lg">Начните путь к здоровому телу уже сегодня</p>
+        <h1 class="text-4xl font-bold text-gray-800 mb-3">Подберите абонемент под свой ритм</h1>
+        <p class="text-gray-500 text-lg max-w-3xl mx-auto">От пробного старта до премиального формата с персональным сопровождением — выберите вариант, который подходит именно вам.</p>
     </div>
 
-    <div class="flex justify-center gap-3 mb-10 flex-wrap">
-        <button onclick="filterAbonements('all', this)" class="filter-btn active px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Все</button>
-        <button onclick="filterAbonements('trial', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Пробные</button>
-        <button onclick="filterAbonements('basic', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Базовые</button>
-        <button onclick="filterAbonements('vip', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">VIP</button>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-5 mb-10">
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            <button onclick="filterAbonements('all', this)" class="filter-btn active px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Все</button>
+            <button onclick="filterAbonements('trial', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Пробные</button>
+            <button onclick="filterAbonements('basic', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Базовые</button>
+            <button onclick="filterAbonements('package', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Пакеты</button>
+            <button onclick="filterAbonements('vip', this)" class="filter-btn px-5 py-2 rounded-full border-2 border-indigo-600 text-indigo-600 font-medium transition-colors">Премиум</button>
+        </div>
     </div>
 
-    <div id="abonements-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+    <div id="abonements-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-12">
         {% for abonement in abonements %}
-        <div class="abonement-card bg-white rounded-2xl shadow-md overflow-visible relative flex flex-col"
-             style="border-top: 4px solid {{ abonement.color }}"
-             data-type="{{ abonement.type }}">
-
-            {% if abonement.is_popular %}
-            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow whitespace-nowrap z-10">
-                🔥 Популярный выбор
-            </div>
-            {% endif %}
-
-            <div class="p-6 flex flex-col flex-1 {% if abonement.is_popular %}pt-7{% endif %}">
-                <div class="text-center mb-5">
-                    <h2 class="text-xl font-bold text-gray-800 mb-1">{{ abonement.name }}</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed">{{ abonement.description }}</p>
-                </div>
-
-                <div class="text-center pb-4 mb-4 border-b border-gray-100">
-                    {% if abonement.discount > 0 %}
-                    <div class="flex items-center justify-center gap-2 mb-1">
-                        <span class="text-gray-400 line-through">{{ abonement.price }} ₽</span>
-                        <span class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">-{{ abonement.discount }}%</span>
+        <article class="abonement-card bg-white rounded-2xl shadow-md overflow-hidden relative flex flex-col border border-gray-100"
+                 style="border-top: 4px solid {{ abonement.color }}"
+                 data-type="{{ abonement.type }}">
+            <div class="p-6 flex flex-col flex-1">
+                <div class="mb-5">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">{{ abonement.type_label }}</span>
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
+                            <span class="text-xs font-medium" style="color: {{ abonement.color }}">{{ abonement.accent }}</span>
+                            {% if abonement.is_popular %}
+                            <span class="inline-flex rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                                Популярный выбор
+                            </span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="text-4xl font-bold text-gray-800">{{ abonement.final_price }} ₽</div>
-                    {% else %}
-                    <div class="text-4xl font-bold text-gray-800">{{ abonement.price }} ₽</div>
-                    {% endif %}
-                    <div class="text-gray-400 text-sm mt-1">{{ abonement.duration_text }}</div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ abonement.name }}</h2>
+                    <p class="text-gray-600 leading-relaxed">{{ abonement.summary }}</p>
                 </div>
 
-                <div class="bg-gray-50 rounded-xl px-4 py-3 text-center mb-5">
-                    <div class="font-semibold text-gray-700 text-sm">{{ abonement.visits_text }}</div>
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="rounded-2xl bg-gray-50 p-4">
+                        <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Стоимость</div>
+                        {% if abonement.discount > 0 %}
+                            <div class="text-gray-400 line-through text-sm">{{ abonement.price }} ₽</div>
+                            <div class="text-3xl font-bold text-gray-900">{{ abonement.final_price }} ₽</div>
+                        {% else %}
+                            <div class="text-3xl font-bold text-gray-900">{{ abonement.price }} ₽</div>
+                        {% endif %}
+                    </div>
+                    <div class="rounded-2xl bg-gray-50 p-4">
+                        <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Формат</div>
+                        <div class="font-semibold text-gray-800">{{ abonement.duration_text }}</div>
+                        <div class="text-sm text-gray-500 mt-1">{{ abonement.visits_text }}</div>
+                    </div>
+                </div>
+
+                {% if abonement.discount > 0 or abonement.price_per_visit > 0 %}
+                <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 mb-5 text-sm text-emerald-800">
+                    {% if abonement.discount > 0 %}
+                        <div class="font-semibold mb-1">Сейчас выгоднее на {{ abonement.discount }}%</div>
+                    {% endif %}
                     {% if abonement.price_per_visit > 0 %}
-                    <div class="text-green-600 text-xs mt-0.5">{{ abonement.price_per_visit }} ₽ / тренировка</div>
+                        <div>{{ abonement.price_per_visit }} ₽ за одно посещение</div>
+                    {% else %}
+                        <div>Безлимитный доступ в течение срока действия</div>
                     {% endif %}
                 </div>
+                {% endif %}
 
-                <ul class="flex-1 space-y-1.5 mb-6">
-                    {% for feature in abonement.features_list %}
+                <ul class="space-y-2 mb-6 flex-1">
+                    {% for feature in abonement.features[:4] %}
                     <li class="flex items-start gap-2 text-sm text-gray-600">
                         <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
                         <span>{{ feature }}</span>
@@ -64,19 +80,19 @@
                     {% endfor %}
                 </ul>
 
-                <div class="flex gap-2 mt-auto">
+                <div class="grid grid-cols-2 gap-3 mt-auto">
                     <a href="{{ url_for('abonements.abonement_detail', abonement_id=abonement.id) }}"
-                       class="flex-1 text-center py-2.5 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors text-sm">
+                       class="text-center py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">
                         Подробнее
                     </a>
                     <a href="{{ url_for('abonements.buy_abonement', abonement_id=abonement.id) }}"
-                       class="flex-1 text-center py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity text-sm"
+                       class="text-center py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity"
                        style="background-color: {{ abonement.color }}">
                         Купить
                     </a>
                 </div>
             </div>
-        </div>
+        </article>
         {% endfor %}
     </div>
 
@@ -110,48 +126,54 @@ function renderCards(abonements) {
 }
 
 function buildCard(a) {
-    const priceHtml = a.discount > 0
-        ? `<div class="flex items-center justify-center gap-2 mb-1">
-               <span class="text-gray-400 line-through">${a.price} ₽</span>
-               <span class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">-${a.discount}%</span>
-           </div>
-           <div class="text-4xl font-bold text-gray-800">${a.final_price} ₽</div>`
-        : `<div class="text-4xl font-bold text-gray-800">${a.price} ₽</div>`;
+    const discountHtml = a.discount > 0
+        ? `<div class="text-gray-400 line-through text-sm">${a.price} ₽</div><div class="text-3xl font-bold text-gray-900">${a.final_price} ₽</div>`
+        : `<div class="text-3xl font-bold text-gray-900">${a.price} ₽</div>`;
 
-    const badge = a.is_popular
-        ? `<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow whitespace-nowrap z-10">🔥 Популярный выбор</div>`
+    const promoHtml = a.discount > 0 || a.price_per_visit > 0
+        ? `<div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 mb-5 text-sm text-emerald-800">
+                ${a.discount > 0 ? `<div class="font-semibold mb-1">Сейчас выгоднее на ${a.discount}%</div>` : ''}
+                ${a.price_per_visit > 0 ? `<div>${a.price_per_visit} ₽ за одно посещение</div>` : '<div>Безлимитный доступ в течение срока действия</div>'}
+           </div>`
         : '';
 
-    const perVisit = a.price_per_visit > 0
-        ? `<div class="text-green-600 text-xs mt-0.5">${a.price_per_visit} ₽ / тренировка</div>` : '';
-
-    const features = a.features_list.map(f =>
+    const features = a.features.slice(0, 4).map(f =>
         `<li class="flex items-start gap-2 text-sm text-gray-600"><span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span><span>${f}</span></li>`
     ).join('');
 
-    const card = document.createElement('div');
-    card.className = 'abonement-card bg-white rounded-2xl shadow-md overflow-visible relative flex flex-col';
+    const card = document.createElement('article');
+    card.className = 'abonement-card bg-white rounded-2xl shadow-md overflow-hidden relative flex flex-col border border-gray-100';
     card.style.borderTop = `4px solid ${a.color}`;
     card.dataset.type = a.type;
     card.innerHTML = `
-        ${badge}
-        <div class="p-6 flex flex-col flex-1 ${a.is_popular ? 'pt-7' : ''}">
-            <div class="text-center mb-5">
-                <h2 class="text-xl font-bold text-gray-800 mb-1">${a.name}</h2>
-                <p class="text-gray-500 text-sm leading-relaxed">${a.description}</p>
+        <div class="p-6 flex flex-col flex-1">
+            <div class="mb-5">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">${a.type_label}</span>
+                    <div class="flex items-center gap-2 flex-wrap justify-end">
+                        <span class="text-xs font-medium" style="color: ${a.color}">${a.accent}</span>
+                        ${a.is_popular ? '<span class="inline-flex rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-white shadow-sm">Популярный выбор</span>' : ''}
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">${a.name}</h2>
+                <p class="text-gray-600 leading-relaxed">${a.summary}</p>
             </div>
-            <div class="text-center pb-4 mb-4 border-b border-gray-100">
-                ${priceHtml}
-                <div class="text-gray-400 text-sm mt-1">${a.duration_text}</div>
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Стоимость</div>
+                    ${discountHtml}
+                </div>
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Формат</div>
+                    <div class="font-semibold text-gray-800">${a.duration_text}</div>
+                    <div class="text-sm text-gray-500 mt-1">${a.visits_text}</div>
+                </div>
             </div>
-            <div class="bg-gray-50 rounded-xl px-4 py-3 text-center mb-5">
-                <div class="font-semibold text-gray-700 text-sm">${a.visits_text}</div>
-                ${perVisit}
-            </div>
-            <ul class="flex-1 space-y-1.5 mb-6">${features}</ul>
-            <div class="flex gap-2 mt-auto">
-                <a href="/abonements/abonement/${a.id}" class="flex-1 text-center py-2.5 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors text-sm">Подробнее</a>
-                <a href="/abonements/buy/${a.id}" class="flex-1 text-center py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity text-sm" style="background-color: ${a.color}">Купить</a>
+            ${promoHtml}
+            <ul class="space-y-2 mb-6 flex-1">${features}</ul>
+            <div class="grid grid-cols-2 gap-3 mt-auto">
+                <a href="/abonements/abonement/${a.id}" class="text-center py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">Подробнее</a>
+                <a href="/abonements/buy/${a.id}" class="text-center py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity" style="background-color: ${a.color}">Купить</a>
             </div>
         </div>`;
     return card;

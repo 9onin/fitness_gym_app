@@ -14,6 +14,10 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(256), nullable=False)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
+    phone = db.Column(db.String(30), nullable=True)
+    client_status = db.Column(db.String(20), nullable=False, default='new')
+    fitness_goal = db.Column(db.String(255), nullable=True)
+    manager_notes = db.Column(db.Text, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -32,6 +36,21 @@ class User(db.Model, UserMixin):
         """
         return check_password_hash(self.password_hash, password)
     
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'.strip()
+
+    @property
+    def status_label(self):
+        labels = {
+            'new': 'Новый',
+            'active': 'Активный',
+            'frozen': 'Заморожен',
+            'inactive': 'Неактивный',
+            'vip': 'VIP',
+        }
+        return labels.get(self.client_status or 'new', 'Новый')
+
     def __repr__(self):
         return f'<User {self.email}>'
 

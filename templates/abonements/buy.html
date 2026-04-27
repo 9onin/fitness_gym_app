@@ -3,80 +3,163 @@
 {% block title %}{{ title }} - Fitness Gym{% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto">
-
+<div class="max-w-6xl mx-auto">
     <a href="{{ url_for('abonements.index') }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 mb-6 text-sm font-medium">
         ← Назад к абонементам
     </a>
 
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6" style="border-top: 4px solid {{ abonement.color }}">
-        <div class="p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-1">{{ abonement.name }}</h2>
-            <p class="text-gray-500 text-sm mb-6">{{ abonement.description }}</p>
+    <div class="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-6">
+        <section class="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden" style="border-top: 5px solid {{ abonement.color }}">
+            <div class="p-8 md:p-10">
+                <div class="flex items-start justify-between gap-4 mb-6">
+                    <div>
+                        <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 mb-4">{{ abonement.type_label }}</span>
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ abonement.name }}</h2>
+                        <p class="text-gray-600 leading-relaxed">{{ abonement.summary }}</p>
+                    </div>
+                    <div class="text-right min-w-[180px]">
+                        {% if abonement.discount > 0 %}
+                            <div class="text-gray-400 line-through text-sm">{{ abonement.price }} ₽</div>
+                            <div class="text-4xl font-bold text-gray-900">{{ abonement.final_price }} ₽</div>
+                            <div class="text-xs font-semibold text-emerald-600 mt-1">Скидка {{ abonement.discount }}%</div>
+                        {% else %}
+                            <div class="text-4xl font-bold text-gray-900">{{ abonement.price }} ₽</div>
+                        {% endif %}
+                    </div>
+                </div>
 
-            <div class="flex items-end gap-3 mb-4">
-                {% if abonement.discount > 0 %}
-                <span class="text-gray-400 line-through text-lg">{{ abonement.price }} ₽</span>
-                <span class="text-3xl font-bold text-gray-800">{{ abonement.final_price }} ₽</span>
-                <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">-{{ abonement.discount }}%</span>
-                {% else %}
-                <span class="text-3xl font-bold text-gray-800">{{ abonement.price }} ₽</span>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="rounded-2xl bg-gray-50 p-4">
+                        <div class="text-xs uppercase tracking-wide text-gray-400 mb-1">Срок действия</div>
+                        <div class="font-semibold text-gray-800">{{ abonement.duration_text }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-gray-50 p-4">
+                        <div class="text-xs uppercase tracking-wide text-gray-400 mb-1">Посещения</div>
+                        <div class="font-semibold text-gray-800">{{ abonement.visits_text }}</div>
+                    </div>
+                </div>
+
+                <div class="rounded-3xl bg-slate-50 p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-3">Что вы получаете</h3>
+                    <ul class="space-y-2">
+                        {% for feature in abonement.features %}
+                            <li class="flex items-start gap-2 text-sm text-gray-600">
+                                <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
+                                <span>{{ feature }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="rounded-3xl border border-indigo-100 bg-indigo-50 p-5 text-sm text-indigo-900">
+                    <div class="font-semibold mb-2">Тестовый онлайн-чекаут</div>
+                    <p>Для демо используйте карту <span class="font-semibold">4111 1111 1111 1111</span>, любой будущий срок действия и CVV из 3 цифр.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-3xl shadow-md border border-gray-100 p-8 md:p-10">
+            <div class="flex items-center justify-between gap-4 mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Оформление покупки</h3>
+                    <p class="text-gray-600">Заполните данные карты, и абонемент сразу появится в вашем кабинете.</p>
+                </div>
+                <div class="hidden md:flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-700 text-sm font-semibold">
+                    Онлайн-оплата
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-gray-400 mb-1">Абонемент</div>
+                    <div class="font-semibold text-gray-800">{{ abonement.name }}</div>
+                </div>
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-gray-400 mb-1">Формат</div>
+                    <div class="font-semibold text-gray-800">{{ abonement.duration_text }}</div>
+                </div>
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-gray-400 mb-1">К оплате</div>
+                    <div class="font-semibold" style="color: {{ abonement.color }}">{{ abonement.final_price }} ₽</div>
+                </div>
+            </div>
+
+            <form method="POST" class="space-y-5">
+                {{ form.hidden_tag() }}
+
+                <div>
+                    <label for="{{ form.cardholder_name.id }}" class="block text-sm font-medium text-gray-700 mb-2">{{ form.cardholder_name.label.text }}</label>
+                    {{ form.cardholder_name(class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 focus:border-indigo-500") }}
+                    {% if form.cardholder_name.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.cardholder_name.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.card_number.id }}" class="block text-sm font-medium text-gray-700 mb-2">{{ form.card_number.label.text }}</label>
+                    {{ form.card_number(class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 focus:border-indigo-500") }}
+                    {% if form.card_number.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.card_number.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_0.8fr] gap-3">
+                    <div>
+                        <label for="{{ form.expiry_month.id }}" class="block text-sm font-medium text-gray-700 mb-2">{{ form.expiry_month.label.text }}</label>
+                        {{ form.expiry_month(class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 focus:border-indigo-500 bg-white") }}
+                    </div>
+                    <div>
+                        <label for="{{ form.expiry_year.id }}" class="block text-sm font-medium text-gray-700 mb-2">{{ form.expiry_year.label.text }}</label>
+                        {{ form.expiry_year(class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 focus:border-indigo-500 bg-white") }}
+                    </div>
+                    <div>
+                        <label for="{{ form.cvv.id }}" class="block text-sm font-medium text-gray-700 mb-2">{{ form.cvv.label.text }}</label>
+                        {{ form.cvv(class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 focus:border-indigo-500") }}
+                    </div>
+                </div>
+                {% if form.expiry_month.errors or form.expiry_year.errors or form.cvv.errors %}
+                    <div class="text-red-500 text-xs -mt-2">
+                        {% for error in form.expiry_month.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                        {% for error in form.expiry_year.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                        {% for error in form.cvv.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
                 {% endif %}
-            </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-5">
-                <div class="bg-gray-50 rounded-xl p-3 text-center">
-                    <div class="text-xs text-gray-400 mb-0.5">Срок действия</div>
-                    <div class="font-semibold text-gray-700 text-sm">{{ abonement.duration_text }}</div>
-                </div>
-                <div class="bg-gray-50 rounded-xl p-3 text-center">
-                    <div class="text-xs text-gray-400 mb-0.5">Посещения</div>
-                    <div class="font-semibold text-gray-700 text-sm">{{ abonement.visits_text }}</div>
-                </div>
-            </div>
+                <label class="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                    {{ form.accept_terms(class="mt-1") }}
+                    <span class="text-sm text-gray-600">{{ form.accept_terms.label.text }}</span>
+                </label>
+                {% if form.accept_terms.errors %}
+                    <div class="text-red-500 text-xs -mt-2">
+                        {% for error in form.accept_terms.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-            <ul class="space-y-1.5 mb-2">
-                {% for feature in abonement.features_list %}
-                <li class="flex items-start gap-2 text-sm text-gray-600">
-                    <span class="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
-                    <span>{{ feature }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+                <button type="submit"
+                        class="w-full py-4 rounded-2xl text-white font-bold text-lg hover:opacity-90 transition-opacity"
+                        style="background-color: {{ abonement.color }}">
+                    {{ form.submit.label.text }} {{ abonement.final_price }} ₽
+                </button>
+            </form>
+
+            <p class="text-center text-xs text-gray-400 mt-5">После успешной оплаты абонемент сразу активируется и появится в разделе “Мои абонементы”.</p>
+        </section>
     </div>
-
-    <div class="bg-white rounded-2xl shadow-md p-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Подтверждение покупки</h3>
-
-        <div class="flex justify-between items-center py-3 border-b border-gray-100 text-sm">
-            <span class="text-gray-500">Абонемент</span>
-            <span class="font-medium text-gray-700">{{ abonement.name }}</span>
-        </div>
-        <div class="flex justify-between items-center py-3 border-b border-gray-100 text-sm">
-            <span class="text-gray-500">Срок</span>
-            <span class="font-medium text-gray-700">{{ abonement.duration_text }}</span>
-        </div>
-        {% if abonement.discount > 0 %}
-        <div class="flex justify-between items-center py-3 border-b border-gray-100 text-sm">
-            <span class="text-gray-500">Скидка</span>
-            <span class="font-medium text-green-600">-{{ abonement.discount }}% (экономия {{ abonement.price - abonement.final_price }} ₽)</span>
-        </div>
-        {% endif %}
-        <div class="flex justify-between items-center py-3 text-base font-bold">
-            <span class="text-gray-800">Итого</span>
-            <span class="text-xl" style="color: {{ abonement.color }}">{{ abonement.final_price }} ₽</span>
-        </div>
-
-        <form method="POST" class="mt-4">
-            <button type="submit"
-                    class="w-full py-3.5 rounded-xl text-white font-bold text-lg hover:opacity-90 transition-opacity"
-                    style="background-color: {{ abonement.color }}">
-                Оплатить {{ abonement.final_price }} ₽
-            </button>
-        </form>
-        <p class="text-center text-xs text-gray-400 mt-3">Нажимая кнопку, вы соглашаетесь с условиями использования</p>
-    </div>
-
 </div>
 {% endblock %}

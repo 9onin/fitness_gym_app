@@ -5,9 +5,10 @@
 {% block content %}
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="bg-indigo-700 text-white py-4 px-6">
-            <h2 class="text-2xl font-bold">Пользователи</h2>
+            <h2 class="text-2xl font-bold">Клиенты и пользователи</h2>
+            <p class="text-indigo-100 mt-1">Следите за статусами клиентов и быстро переходите в их карточки.</p>
         </div>
-        
+
         <div class="p-6">
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
@@ -18,7 +19,7 @@
                             <th class="py-3 px-4 text-left">Фамилия</th>
                             <th class="py-3 px-4 text-center">Дата регистрации</th>
                             <th class="py-3 px-4 text-center">Активные записи</th>
-                            <th class="py-3 px-4 text-center">Статус</th>
+                            <th class="py-3 px-4 text-center">Статус клиента</th>
                             <th class="py-3 px-4 text-center">Действия</th>
                         </tr>
                     </thead>
@@ -39,30 +40,44 @@
                                 </td>
                                 <td class="py-3 px-4 text-center">
                                     {% if user.is_admin %}
-                                        <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded">Администратор</span>
+                                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium">Администратор</span>
+                                    {% elif user.client_status == 'active' %}
+                                        <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">{{ user.status_label }}</span>
+                                    {% elif user.client_status == 'frozen' %}
+                                        <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">{{ user.status_label }}</span>
+                                    {% elif user.client_status == 'inactive' %}
+                                        <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-medium">{{ user.status_label }}</span>
+                                    {% elif user.client_status == 'vip' %}
+                                        <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">{{ user.status_label }}</span>
                                     {% else %}
-                                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Пользователь</span>
+                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{{ user.status_label }}</span>
                                     {% endif %}
                                 </td>
-                                <td class="py-3 px-4 text-center">
-                                    {% if not user.is_admin %}
-                                        <form action="{{ url_for('admin.make_admin', user_id=user.id) }}" method="post" class="inline">
-                                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm">
-                                                Сделать администратором
-                                            </button>
-                                        </form>
-                                    {% endif %}
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-wrap justify-center gap-2">
+                                        <a href="{{ url_for('admin.user_detail', user_id=user.id) }}"
+                                           class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded text-sm font-medium">
+                                            Карточка
+                                        </a>
+                                        {% if not user.is_admin %}
+                                            <form action="{{ url_for('admin.make_admin', user_id=user.id) }}" method="post" class="inline">
+                                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-sm font-medium">
+                                                    Сделать администратором
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="7" class="py-4 px-4 text-center text-gray-500">Нет пользователей</td>
+                                <td colspan="7" class="py-4 px-4 text-center text-gray-500">Пользователи пока не найдены.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="mt-8 text-center">
                 <a href="{{ url_for('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
                     &larr; Вернуться к панели администратора
@@ -70,4 +85,4 @@
             </div>
         </div>
     </div>
-{% endblock %} 
+{% endblock %}

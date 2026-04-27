@@ -7,11 +7,11 @@
         <div class="bg-indigo-700 text-white py-4 px-6">
             <h2 class="text-2xl font-bold">Регистрация</h2>
         </div>
-        
+
         <div class="p-6">
             <form method="POST" action="{{ url_for('auth.register') }}">
                 {{ form.hidden_tag() }}
-                
+
                 <div class="mb-4">
                     <label for="{{ form.email.id }}" class="block text-gray-700 text-sm font-bold mb-2">
                         {{ form.email.label }}
@@ -25,7 +25,7 @@
                         </div>
                     {% endif %}
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label for="{{ form.first_name.id }}" class="block text-gray-700 text-sm font-bold mb-2">
@@ -40,7 +40,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+
                     <div>
                         <label for="{{ form.last_name.id }}" class="block text-gray-700 text-sm font-bold mb-2">
                             {{ form.last_name.label }}
@@ -55,7 +55,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="mb-4">
                     <label for="{{ form.password.id }}" class="block text-gray-700 text-sm font-bold mb-2">
                         {{ form.password.label }}
@@ -69,8 +69,8 @@
                         </div>
                     {% endif %}
                 </div>
-                
-                <div class="mb-6">
+
+                <div class="mb-4">
                     <label for="{{ form.confirm_password.id }}" class="block text-gray-700 text-sm font-bold mb-2">
                         {{ form.confirm_password.label }}
                     </label>
@@ -83,10 +83,25 @@
                         </div>
                     {% endif %}
                 </div>
-                
+
+                <div class="mb-6 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+                    <label for="{{ form.captcha_answer.id }}" class="block text-gray-700 text-sm font-bold mb-2">
+                        {{ form.captcha_answer.label }}
+                    </label>
+                    <p class="text-sm text-gray-600 mb-2">Решите пример, чтобы завершить регистрацию: <span class="font-semibold text-indigo-700">{{ captcha_question }}</span></p>
+                    {{ form.captcha_answer(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+                    {% if form.captcha_answer.errors %}
+                        <div class="text-red-500 text-xs mt-1">
+                            {% for error in form.captcha_answer.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
                 <div class="flex items-center justify-between">
                     {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
-                    
+
                     <a href="{{ url_for('auth.login') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
                         Уже есть аккаунт? Войдите
                     </a>
@@ -94,4 +109,4 @@
             </form>
         </div>
     </div>
-{% endblock %} 
+{% endblock %}

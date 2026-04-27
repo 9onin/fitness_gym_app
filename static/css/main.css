@@ -1,5 +1,76 @@
 /* Custom styles for Fitness Gym App */
 
+body.home-page {
+    background:
+        linear-gradient(rgba(7, 12, 22, 0.72), rgba(7, 12, 22, 0.82)),
+        url("/static/images/homepage-gym-bg.png") center top / cover fixed no-repeat;
+}
+
+body.home-page main {
+    position: relative;
+}
+
+.homepage-hero {
+    background: linear-gradient(135deg, rgba(67, 56, 202, 0.88), rgba(79, 70, 229, 0.72));
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.homepage-panel {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.energy-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.energy-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff;
+    transition: color 150ms ease;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.energy-level-1 .energy-dot.is-active {
+    color: #818cf8;
+}
+
+.energy-level-2 .energy-dot.is-active {
+    color: #6366f1;
+}
+
+.energy-level-3 .energy-dot.is-active {
+    color: #4338ca;
+}
+
+body.home-page section > h2 {
+    color: #f8fafc;
+    text-shadow: 0 3px 18px rgba(15, 23, 42, 0.55);
+}
+
+@media (max-width: 768px) {
+    body.home-page {
+        background-attachment: scroll;
+        background-position: center center;
+    }
+
+    .homepage-hero,
+    .homepage-panel {
+        backdrop-filter: none;
+    }
+}
+
 /* Override default focus styles */
 :focus {
     outline: none !important;

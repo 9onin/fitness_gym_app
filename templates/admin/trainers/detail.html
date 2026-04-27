@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ trainer.first_name }} {{ trainer.last_name }} - Fitness Gym{% endblock %}
+
+{% block content %}
+    <div class="space-y-6">
+        <section class="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200 md:p-8">
+            <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+                <div>
+                    <div class="inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-indigo-100 text-xl font-semibold text-indigo-700">
+                        {{ trainer.first_name[0] }}{{ trainer.last_name[0] }}
+                    </div>
+                    <h1 class="mt-4 text-3xl font-semibold text-slate-900 md:text-4xl">{{ trainer.first_name }} {{ trainer.last_name }}</h1>
+                    <p class="mt-3 text-base font-medium text-indigo-700">{{ trainer.specialization }}</p>
+                    <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                        {{ trainer.profile or 'Описание тренера пока не заполнено. Его можно дополнить через редактирование.' }}
+                    </p>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    <div class="rounded-3xl bg-slate-50 px-5 py-4">
+                        <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Опыт</div>
+                        <div class="mt-2 text-2xl font-semibold text-slate-900">{{ trainer.experience_years }} лет</div>
+                    </div>
+                    <div class="rounded-3xl bg-slate-50 px-5 py-4">
+                        <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Будущие тренировки</div>
+                        <div class="mt-2 text-2xl font-semibold text-slate-900">{{ upcoming_workouts|length }}</div>
+                    </div>
+                    <div class="rounded-3xl bg-slate-50 px-5 py-4">
+                        <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Проведено тренировок</div>
+                        <div class="mt-2 text-2xl font-semibold text-slate-900">{{ completed_workouts_count }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{{ url_for('admin.edit_trainer', trainer_id=trainer.id) }}" class="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                    Редактировать
+                </a>
+                <a href="{{ url_for('admin.trainers') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                    Назад к тренерам
+                </a>
+            </div>
+        </section>
+
+        <section class="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h2 class="text-2xl font-semibold text-slate-900">Ближайшие занятия тренера</h2>
+            <p class="mt-2 text-sm text-slate-500">Удобно проверять загрузку и расписание прямо из карточки.</p>
+
+            <div class="mt-6 space-y-4">
+                {% for workout in upcoming_workouts %}
+                <article class="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900">{{ workout.workout_type.name }}</h3>
+                            <p class="mt-2 text-sm text-slate-500">
+                                {{ workout.start_time.strftime('%d.%m.%Y') }} • {{ workout.start_time.strftime('%H:%M') }} - {{ workout.end_time.strftime('%H:%M') }}
+                            </p>
+                            {% if workout.description %}
+                            <p class="mt-3 text-sm leading-6 text-slate-600">{{ workout.description }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                            {{ workout.available_spots }} из {{ workout.max_participants }} мест свободно
+                        </div>
+                    </div>
+                </article>
+                {% else %}
+                <div class="rounded-3xl border border-dashed border-slate-300 px-5 py-8 text-center text-sm text-slate-500">
+                    У этого тренера пока нет ближайших занятий.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

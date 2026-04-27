@@ -70,6 +70,33 @@ def trainers():
                          title='Управление тренерами',
                          trainers=trainers_list)
 
+@admin_bp.route('/trainers/<int:trainer_id>')
+@login_required
+@admin_required
+def trainer_detail(trainer_id):
+    ensure_trainers_and_balance_workouts()
+    trainer = Trainer.query.get_or_404(trainer_id)
+    upcoming_workouts = (
+        Workout.query.filter(
+            Workout.trainer_id == trainer.id,
+            Workout.start_time >= datetime.now()
+        )
+        .order_by(Workout.start_time)
+        .all()
+    )
+    completed_workouts_count = Workout.query.filter(
+        Workout.trainer_id == trainer.id,
+        Workout.start_time < datetime.now()
+    ).count()
+
+    return render_template(
+        'admin/trainers/detail.html',
+        title=f'{trainer.first_name} {trainer.last_name}',
+        trainer=trainer,
+        upcoming_workouts=upcoming_workouts,
+        completed_workouts_count=completed_workouts_count,
+    )
+
 @admin_bp.route('/trainers/new', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -237,6 +264,7 @@ def delete_workout_type(type_id):
 @login_required
 @admin_required
 def admin_workouts():
+    ensure_trainers_and_balance_workouts()
     """
     Обработчик маршрута списка тренировок для администратора
     """

@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 
 from forms.booking_forms import BookingForm
 from models.database import db
-from models.models import Booking, UserAbonement, Workout, WorkoutType
+from models.models import Booking, Trainer, UserAbonement, Workout, WorkoutType
 from services.intelligence_service import build_client_intelligence
 from services.notification_service import send_booking_confirmation
 from services.trainer_balance_service import ensure_trainers_and_balance_workouts
@@ -30,6 +30,7 @@ def get_valid_abonement(user_id):
 @user_bp.route('/schedule')
 @login_required
 def schedule():
+    ensure_trainers_and_balance_workouts()
     today = datetime.now().date()
 
     future_bookings = (
@@ -85,9 +86,44 @@ def workouts():
     )
 
 
+@user_bp.route('/trainers')
+@login_required
+def trainers():
+    ensure_trainers_and_balance_workouts()
+    trainers_list = Trainer.query.order_by(Trainer.first_name, Trainer.last_name).all()
+    return render_template(
+        'user/trainers.html',
+        title='Тренеры клуба',
+        trainers=trainers_list,
+    )
+
+
+@user_bp.route('/trainers/<int:trainer_id>')
+@login_required
+def trainer_detail(trainer_id):
+    ensure_trainers_and_balance_workouts()
+    trainer = Trainer.query.get_or_404(trainer_id)
+    upcoming_workouts = (
+        Workout.query.filter(
+            Workout.trainer_id == trainer.id,
+            Workout.start_time >= datetime.now(),
+        )
+        .order_by(Workout.start_time)
+        .all()
+    )
+
+    return render_template(
+        'user/trainer_detail.html',
+        title=f'{trainer.first_name} {trainer.last_name}',
+        trainer=trainer,
+        upcoming_workouts=upcoming_workouts,
+    )
+
+
 @user_bp.route('/book/<int:workout_id>', methods=['GET', 'POST'])
 @login_required
 def book_workout(workout_id):
+    ensure_trainers_and_balance_workouts()
     workout = Workout.query.get_or_404(workout_id)
 
     existing_booking = Booking.query.filter_by(user_id=current_user.id, workout_id=workout.id).first()

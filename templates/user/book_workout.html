@@ -42,7 +42,13 @@
                 
                 <div class="mb-4">
                     <p class="text-gray-500 text-sm">Тренер:</p>
-                    <p>{{ workout.trainer.first_name }} {{ workout.trainer.last_name }}</p>
+                    {% if workout.trainer %}
+                    <a href="{{ url_for('user.trainer_detail', trainer_id=workout.trainer.id) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">
+                        {{ workout.trainer.first_name }} {{ workout.trainer.last_name }}
+                    </a>
+                    {% else %}
+                    <p>Тренер назначается</p>
+                    {% endif %}
                 </div>
                 
                 <div class="mb-4">

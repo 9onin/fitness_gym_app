@@ -41,6 +41,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-workout-grid>
             {% for workout_type in workout_types %}
                 {% set energy_level = energy_levels.get(workout_type.name, 2) %}
+                {% set workout_summary = workout_summaries.get(workout_type.name, 'Сбалансированная тренировка для силы, выносливости и хорошего самочувствия.') %}
                 <div class="homepage-panel rounded-lg shadow-md overflow-hidden workout-card" data-energy-level="{{ energy_level }}">
                     <div class="p-6">
                         <h3 class="text-xl font-bold mb-2">{{ workout_type.name }}</h3>
@@ -49,6 +50,7 @@
                                 <span class="energy-dot {% if step <= energy_level %}is-active{% endif %}">✦</span>
                             {% endfor %}
                         </div>
+                        <p class="text-sm font-medium text-slate-700 mb-2">{{ workout_summary }}</p>
                         <p class="text-gray-600 mb-4">{{ workout_type.description }}</p>
 
                         {% if current_user.is_authenticated %}

@@ -58,4 +58,22 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = `${year}-${month}-${day}T${hours}:${minutes}`;
         }
     });
-}); 
+});
+
+// Toggle password visibility for auth forms
+document.addEventListener('DOMContentLoaded', function() {
+    const toggles = document.querySelectorAll('[data-toggle-password]');
+
+    toggles.forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            const targetId = toggle.getAttribute('data-toggle-password');
+            const passwordInput = document.getElementById(targetId);
+
+            if (!passwordInput) {
+                return;
+            }
+
+            passwordInput.type = toggle.checked ? 'text' : 'password';
+        });
+    });
+});

@@ -248,6 +248,10 @@ class UserAbonement(db.Model):
     visits_remaining = db.Column(db.Integer, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     payment_info = db.Column(db.Text)
+    frozen_from = db.Column(db.DateTime, nullable=True)
+    frozen_until = db.Column(db.DateTime, nullable=True)
+    freeze_days_used = db.Column(db.Integer, default=0)
+    extension_count = db.Column(db.Integer, default=0)
     
     user = db.relationship('User', backref='abonements')
     abonement = db.relationship('Abonement')
@@ -259,6 +263,8 @@ class UserAbonement(db.Model):
             return False
         if datetime.utcnow() > self.expiration_date:
             return False
+        if self.is_frozen:
+            return False
         if self.visits_remaining is not None and self.visits_remaining <= 0:
             return False
         return True
@@ -267,6 +273,18 @@ class UserAbonement(db.Model):
     def is_expired(self):
         """Проверка истечения срока"""
         return datetime.utcnow() > self.expiration_date
+
+    @property
+    def is_frozen(self):
+        return self.frozen_until is not None and datetime.utcnow() < self.frozen_until
+
+    @property
+    def freeze_days_available(self):
+        return max(0, 14 - (self.freeze_days_used or 0))
+
+    @property
+    def can_freeze(self):
+        return self.is_active and not self.is_expired and not self.is_frozen and self.freeze_days_available > 0
     
     @property
     def visits_used(self):
@@ -282,6 +300,10 @@ class UserAbonement(db.Model):
             return 0
         delta = self.expiration_date - datetime.utcnow()
         return max(0, delta.days)
+
+    @property
+    def nearing_expiration(self):
+        return self.is_active and not self.is_expired and self.days_remaining <= 7
     
     def __repr__(self):
         return f'<UserAbonement {self.id} User:{self.user_id} Abonement:{self.abonement_id}>' 

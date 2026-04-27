@@ -6,9 +6,27 @@
     <div class="container">
         <header class="header">
             <h1>Мои абонементы</h1>
-            <p class="subtitle">Управление вашими абонементами</p>
+            <p class="subtitle">Продление, заморозка и уведомления по вашим тренировкам и абонементам.</p>
         </header>
-        
+
+        {% if abonement_notifications or workout_notifications %}
+        <div class="mb-8 space-y-3">
+            {% for notification in abonement_notifications %}
+            <div class="rounded-2xl border px-5 py-4 {% if notification.level == 'warning' %}border-amber-200 bg-amber-50 text-amber-900{% else %}border-blue-200 bg-blue-50 text-blue-900{% endif %}">
+                <div class="font-semibold">{{ notification.title }}</div>
+                <div class="mt-1 text-sm">{{ notification.text }}</div>
+            </div>
+            {% endfor %}
+
+            {% for notification in workout_notifications %}
+            <div class="rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-indigo-900">
+                <div class="font-semibold">{{ notification.title }}</div>
+                <div class="mt-1 text-sm">{{ notification.text }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="abonements-grid">
             {% for ua in user_abonements %}
             <div class="abonement-card" style="border-top: 4px solid {{ ua.abonement.color }}">
@@ -16,26 +34,32 @@
                     <h2>{{ ua.abonement.name }}</h2>
                     <p class="description">{{ ua.abonement.description }}</p>
                 </div>
-                
+
                 <div class="status-section">
-                    {% if ua.is_valid %}
+                    {% if ua.is_frozen %}
+                    <span class="status-active" style="background:#dbeafe;color:#1d4ed8;">Заморожен</span>
+                    {% elif ua.is_valid %}
                     <span class="status-active">Активен</span>
                     {% else %}
                     <span class="status-expired">Недействителен</span>
                     {% endif %}
                 </div>
-                
+
                 <div class="info-section">
                     <p><strong>Дата покупки:</strong> {{ ua.purchase_date.strftime('%d.%m.%Y') }}</p>
                     <p><strong>Срок действия:</strong> до {{ ua.expiration_date.strftime('%d.%m.%Y') }}</p>
-                    
-                    {% if ua.is_expired %}
-                    <p class="text-red"><strong>Истек:</strong> {{ ua.days_remaining * -1 }} дней назад</p>
-                    {% elif ua.days_remaining is not none %}
+                    <p><strong>Продлений:</strong> {{ ua.extension_count or 0 }}</p>
+                    <p><strong>Остаток заморозки:</strong> {{ ua.freeze_days_available }} дн.</p>
+
+                    {% if ua.is_frozen and ua.frozen_until %}
+                    <p><strong>Заморожен до:</strong> {{ ua.frozen_until.strftime('%d.%m.%Y') }}</p>
+                    {% elif ua.is_expired %}
+                    <p class="text-red"><strong>Истек:</strong> абонемент завершился</p>
+                    {% else %}
                     <p><strong>Осталось дней:</strong> {{ ua.days_remaining }}</p>
                     {% endif %}
                 </div>
-                
+
                 <div class="visits-section">
                     {% if ua.visits_remaining is none %}
                     <p><strong>Посещения:</strong> <span class="text-green">Безлимит</span></p>
@@ -46,6 +70,21 @@
                     </div>
                     {% endif %}
                 </div>
+
+                <div class="mt-5 flex flex-wrap gap-2">
+                    <form action="{{ url_for('abonements.extend_abonement', user_abonement_id=ua.id) }}" method="post" class="inline">
+                        <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                            Продлить
+                        </button>
+                    </form>
+                    {% if ua.can_freeze %}
+                    <form action="{{ url_for('abonements.freeze_abonement', user_abonement_id=ua.id) }}" method="post" class="inline">
+                        <button type="submit" class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Заморозить на 7 дней
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
             {% else %}
             <div class="empty-state">
@@ -54,7 +93,49 @@
             </div>
             {% endfor %}
         </div>
-        
+
+        <section class="mt-10 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+            <div class="mb-5 flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-900">История оплат</h2>
+                    <p class="mt-1 text-sm text-slate-500">Здесь собраны последние покупки абонементов и детали оплаты.</p>
+                </div>
+                <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">{{ payment_history|length }}</span>
+            </div>
+
+            <div class="space-y-4">
+                {% for payment in payment_history %}
+                <div class="rounded-2xl border border-slate-200 p-5">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                            <div class="text-lg font-semibold text-slate-900">{{ payment.abonement_name }}</div>
+                            <div class="mt-1 text-sm text-slate-500">
+                                Оплата от {{ payment.purchase_date.strftime('%d.%m.%Y') }}
+                                {% if payment.details.processed_at %}
+                                    • {{ payment.details.processed_at.strftime('%H:%M') }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            {{ payment.details.status }}
+                        </span>
+                    </div>
+
+                    <div class="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+                        <div><strong>Сумма:</strong> {{ payment.details.amount }} ₽</div>
+                        <div><strong>Карта:</strong> {{ payment.details.card_mask }}</div>
+                        <div><strong>Транзакция:</strong> {{ payment.details.transaction_id }}</div>
+                        <div><strong>Провайдер:</strong> {{ payment.details.provider }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+                    История платежей пока пуста. После покупки абонемента она появится здесь автоматически.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
         <div class="actions">
             <a href="{{ url_for('abonements.index') }}" class="btn-details">Выбрать новый абонемент</a>
         </div>

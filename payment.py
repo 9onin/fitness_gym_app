@@ -6,6 +6,59 @@ class PaymentValidationError(ValueError):
     pass
 
 
+def parse_payment_info(payment_info):
+    if not payment_info:
+        return None
+
+    raw_parts = [part.strip() for part in payment_info.split(';') if part.strip()]
+    if not raw_parts:
+        return None
+
+    details = {
+        'provider': 'Онлайн-оплата',
+        'transaction_id': '—',
+        'amount': None,
+        'currency': 'RUB',
+        'card_mask': '—',
+        'processed_at': None,
+        'status': 'Оплачено',
+        'is_test': False,
+    }
+
+    first_part = raw_parts[0]
+    if ':' in first_part:
+        provider_code, transaction_id = first_part.split(':', 1)
+        details['provider'] = 'Тестовая онлайн-оплата' if provider_code == 'online-test' else provider_code
+        details['transaction_id'] = transaction_id or '—'
+        details['is_test'] = provider_code == 'online-test'
+    else:
+        details['transaction_id'] = first_part
+
+    for part in raw_parts[1:]:
+        if '=' not in part:
+            continue
+        key, value = part.split('=', 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key == 'amount':
+            try:
+                details['amount'] = int(value)
+            except ValueError:
+                details['amount'] = None
+        elif key == 'card':
+            details['card_mask'] = value or '—'
+        elif key == 'processed_at':
+            try:
+                details['processed_at'] = datetime.fromisoformat(value)
+            except ValueError:
+                details['processed_at'] = None
+        elif key == 'currency':
+            details['currency'] = value or 'RUB'
+
+    return details
+
+
 class TestPaymentProcessor:
     def process_test_payment(self, amount, user_id, card_number, cardholder_name, expiry_month, expiry_year, cvv):
         normalized_number = self._normalize_card_number(card_number)

@@ -188,3 +188,17 @@ def send_upcoming_workout_reminder():
             error_count += 1
     
     current_app.logger.info(f"Sent {sent_count} workout reminders with {error_count} errors") 
+
+
+def send_abonement_expiration_notification(user, user_abonement):
+    subject = "Скоро закончится абонемент"
+
+    template = f"""
+    <h2>Напоминание об окончании абонемента</h2>
+    <p>Здравствуйте, {user.first_name}!</p>
+    <p>Ваш абонемент <strong>{user_abonement.abonement.name}</strong> действует до <strong>{user_abonement.expiration_date.strftime('%d.%m.%Y')}</strong>.</p>
+    <p>Если хотите продолжить тренировки без перерыва, продлите абонемент заранее в личном кабинете.</p>
+    <p>С уважением,<br>Команда Fitness Gym</p>
+    """
+
+    return send_email(user.email, subject, template)

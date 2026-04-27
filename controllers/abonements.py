@@ -5,8 +5,8 @@ from flask_login import current_user, login_required
 
 from forms.payment_forms import AbonementPaymentForm
 from models.database import db
-from models.models import Abonement, UserAbonement
-from payment import PaymentValidationError, TestPaymentProcessor
+from models.models import Abonement, Booking, UserAbonement, Workout
+from payment import PaymentValidationError, TestPaymentProcessor, parse_payment_info
 
 
 abonements_bp = Blueprint('abonements', __name__)
@@ -193,6 +193,64 @@ def build_abonement_view(abonement):
     }
 
 
+def build_payment_history(user_abonements):
+    payment_history = []
+
+    for user_abonement in user_abonements:
+        payment_details = parse_payment_info(user_abonement.payment_info)
+        if not payment_details:
+            continue
+
+        payment_history.append({
+            'abonement_name': user_abonement.abonement.name,
+            'purchase_date': user_abonement.purchase_date,
+            'details': payment_details,
+        })
+
+    return payment_history
+
+
+def build_abonement_notifications(user_abonements):
+    notifications = []
+
+    for user_abonement in user_abonements:
+        if user_abonement.is_frozen:
+            notifications.append({
+                'level': 'info',
+                'title': 'Абонемент на заморозке',
+                'text': f'{user_abonement.abonement.name} заморожен до {user_abonement.frozen_until.strftime("%d.%m.%Y")}.',
+            })
+        elif user_abonement.nearing_expiration:
+            notifications.append({
+                'level': 'warning',
+                'title': 'Скоро закончится абонемент',
+                'text': f'{user_abonement.abonement.name} действует еще {user_abonement.days_remaining} дн.',
+            })
+
+    return notifications
+
+
+def build_workout_notifications(user_id):
+    now = datetime.utcnow()
+    next_day = now + timedelta(hours=24)
+    reminders = (
+        Booking.query.join(Workout)
+        .filter(Booking.user_id == user_id, Workout.start_time >= now, Workout.start_time <= next_day)
+        .order_by(Workout.start_time)
+        .all()
+    )
+    notifications = []
+
+    for booking in reminders:
+        workout = booking.workout
+        notifications.append({
+            'title': 'Напоминание о тренировке',
+            'text': f'{workout.workout_type.name} сегодня/завтра в {workout.start_time.strftime("%H:%M")} с тренером {workout.trainer.first_name} {workout.trainer.last_name}.',
+        })
+
+    return notifications
+
+
 @abonements_bp.route('/')
 def index():
     sync_abonement_catalog()
@@ -300,6 +358,48 @@ def buy_abonement(abonement_id):
     return render_template('abonements/buy.html', abonement=abonement, form=form, title=f"Купить {abonement['name']}")
 
 
+@abonements_bp.route('/extend/<int:user_abonement_id>', methods=['POST'])
+@login_required
+def extend_abonement(user_abonement_id):
+    user_abonement = UserAbonement.query.get_or_404(user_abonement_id)
+    if user_abonement.user_id != current_user.id:
+        flash('Нельзя управлять чужим абонементом.', 'danger')
+        return redirect(url_for('abonements.my_abonements'))
+
+    extension_days = user_abonement.abonement.duration_days
+    start_point = max(datetime.utcnow(), user_abonement.expiration_date)
+    user_abonement.expiration_date = start_point + timedelta(days=extension_days)
+    user_abonement.extension_count = (user_abonement.extension_count or 0) + 1
+    db.session.commit()
+
+    flash(f'Абонемент продлен еще на {extension_days} дн.', 'success')
+    return redirect(url_for('abonements.my_abonements'))
+
+
+@abonements_bp.route('/freeze/<int:user_abonement_id>', methods=['POST'])
+@login_required
+def freeze_abonement(user_abonement_id):
+    user_abonement = UserAbonement.query.get_or_404(user_abonement_id)
+    if user_abonement.user_id != current_user.id:
+        flash('Нельзя управлять чужим абонементом.', 'danger')
+        return redirect(url_for('abonements.my_abonements'))
+
+    if not user_abonement.can_freeze:
+        flash('Этот абонемент сейчас нельзя заморозить.', 'warning')
+        return redirect(url_for('abonements.my_abonements'))
+
+    freeze_days = min(7, user_abonement.freeze_days_available)
+    now = datetime.utcnow()
+    user_abonement.frozen_from = now
+    user_abonement.frozen_until = now + timedelta(days=freeze_days)
+    user_abonement.expiration_date = user_abonement.expiration_date + timedelta(days=freeze_days)
+    user_abonement.freeze_days_used = (user_abonement.freeze_days_used or 0) + freeze_days
+    db.session.commit()
+
+    flash(f'Абонемент заморожен на {freeze_days} дн.', 'info')
+    return redirect(url_for('abonements.my_abonements'))
+
+
 @abonements_bp.route('/my')
 @login_required
 def my_abonements():
@@ -307,4 +407,15 @@ def my_abonements():
     user_abonements = UserAbonement.query.filter_by(user_id=current_user.id).order_by(
         UserAbonement.purchase_date.desc()
     ).all()
-    return render_template('abonements/my_abonements.html', user_abonements=user_abonements, title='Мои абонементы')
+    payment_history = build_payment_history(user_abonements)
+    abonement_notifications = build_abonement_notifications(user_abonements)
+    workout_notifications = build_workout_notifications(current_user.id)
+
+    return render_template(
+        'abonements/my_abonements.html',
+        user_abonements=user_abonements,
+        payment_history=payment_history,
+        abonement_notifications=abonement_notifications,
+        workout_notifications=workout_notifications,
+        title='Мои абонементы'
+    )

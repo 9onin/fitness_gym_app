@@ -6,6 +6,7 @@ from forms.admin_forms import TrainerForm, WorkoutForm, WorkoutTypeForm, Aboneme
 from services.notification_service import send_schedule_update_notification
 from datetime import datetime, timedelta
 from functools import wraps
+from payment import parse_payment_info
 
 # Создание блюпринта для административных маршрутов
 admin_bp = Blueprint('admin', __name__)
@@ -446,11 +447,21 @@ def user_detail(user_id):
         .order_by(UserAbonement.purchase_date.desc())
         .all()
     )
+    payment_history = []
 
     now = datetime.utcnow()
     upcoming_bookings = [booking for booking in bookings if booking.workout.start_time >= now]
     past_bookings = [booking for booking in bookings if booking.workout.start_time < now]
     active_abonements = [abonement for abonement in abonements if abonement.is_valid]
+
+    for user_abonement in abonements:
+        payment_details = parse_payment_info(user_abonement.payment_info)
+        if payment_details:
+            payment_history.append({
+                'abonement_name': user_abonement.abonement.name,
+                'purchase_date': user_abonement.purchase_date,
+                'details': payment_details,
+            })
 
     return render_template(
         'admin/users/detail.html',
@@ -461,6 +472,7 @@ def user_detail(user_id):
         past_bookings=past_bookings,
         abonements=abonements,
         active_abonements=active_abonements,
+        payment_history=payment_history,
         status_choices=CLIENT_STATUS_CHOICES,
     )
 

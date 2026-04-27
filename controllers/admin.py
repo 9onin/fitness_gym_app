@@ -4,6 +4,8 @@ from models.models import User, Trainer, Workout, WorkoutType, Booking, Abonemen
 from models.database import db
 from forms.admin_forms import TrainerForm, WorkoutForm, WorkoutTypeForm, AbonementForm
 from services.notification_service import send_schedule_update_notification
+from services.trainer_balance_service import ensure_trainers_and_balance_workouts
+from services.intelligence_service import build_client_intelligence, build_user_directory_intelligence
 from datetime import datetime, timedelta
 from functools import wraps
 from payment import parse_payment_info
@@ -62,6 +64,7 @@ def trainers():
     """
     Обработчик маршрута списка тренеров
     """
+    ensure_trainers_and_balance_workouts()
     trainers_list = Trainer.query.all()
     return render_template('admin/trainers/index.html',
                          title='Управление тренерами',
@@ -415,7 +418,8 @@ def users():
     all_users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin/users/index.html',
                          title='Пользователи',
-                         users=all_users)
+                         users=all_users,
+                         intelligence_map=build_user_directory_intelligence(all_users))
 
 @admin_bp.route('/users/<int:user_id>', methods=['GET', 'POST'])
 @login_required
@@ -453,6 +457,7 @@ def user_detail(user_id):
     upcoming_bookings = [booking for booking in bookings if booking.workout.start_time >= now]
     past_bookings = [booking for booking in bookings if booking.workout.start_time < now]
     active_abonements = [abonement for abonement in abonements if abonement.is_valid]
+    smart_profile = build_client_intelligence(user)
 
     for user_abonement in abonements:
         payment_details = parse_payment_info(user_abonement.payment_info)
@@ -473,6 +478,7 @@ def user_detail(user_id):
         abonements=abonements,
         active_abonements=active_abonements,
         payment_history=payment_history,
+        smart_profile=smart_profile,
         status_choices=CLIENT_STATUS_CHOICES,
     )
 

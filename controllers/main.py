@@ -1,5 +1,9 @@
 from flask import Blueprint, render_template
+from flask_login import current_user
+
 from models.models import Workout, WorkoutType
+from services.intelligence_service import build_client_intelligence
+
 
 main_bp = Blueprint('main', __name__)
 
@@ -57,6 +61,7 @@ WORKOUT_SUMMARIES = {
 def index():
     upcoming_workouts = Workout.query.order_by(Workout.start_time).limit(5).all()
     workout_types = WorkoutType.query.all()
+    smart_profile = build_client_intelligence(current_user) if current_user.is_authenticated else None
 
     return render_template(
         'index.html',
@@ -64,5 +69,6 @@ def index():
         upcoming_workouts=upcoming_workouts,
         workout_types=workout_types,
         energy_levels=ENERGY_LEVELS,
-        workout_summaries=WORKOUT_SUMMARIES
+        workout_summaries=WORKOUT_SUMMARIES,
+        smart_profile=smart_profile,
     )

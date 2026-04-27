@@ -6,7 +6,9 @@ from flask_login import current_user, login_required
 from forms.booking_forms import BookingForm
 from models.database import db
 from models.models import Booking, UserAbonement, Workout, WorkoutType
+from services.intelligence_service import build_client_intelligence
 from services.notification_service import send_booking_confirmation
+from services.trainer_balance_service import ensure_trainers_and_balance_workouts
 
 
 user_bp = Blueprint('user', __name__)
@@ -57,12 +59,14 @@ def schedule():
         future_bookings=future_bookings,
         past_bookings=past_bookings,
         workout_notifications=workout_notifications,
+        smart_profile=build_client_intelligence(current_user),
     )
 
 
 @user_bp.route('/workouts')
 @login_required
 def workouts():
+    ensure_trainers_and_balance_workouts()
     workout_type_id = request.args.get('type', type=int)
     base_query = Workout.query.filter(Workout.start_time >= datetime.now())
 

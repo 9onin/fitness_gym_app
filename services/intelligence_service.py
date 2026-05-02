@@ -23,14 +23,14 @@ INTENSITY_LEVELS = {
     'Бокс': 3,
     'HIIT': 3,
     'Табата': 3,
-    'ТРХ': 3,
+    'TRX': 3,
 }
 
 
 GOAL_RULES = {
     'похуд': ['Кардио', 'Функциональный тренинг', 'Зумба', 'Спиннинг'],
     'снижен': ['Кардио', 'Функциональный тренинг', 'Зумба'],
-    'мас': ['Силовая тренировка', 'Кроссфит', 'ТРХ'],
+    'мас': ['Силовая тренировка', 'Кроссфит', 'TRX'],
     'сил': ['Силовая тренировка', 'Кроссфит', 'Бокс'],
     'восстан': ['Йога', 'Пилатес', 'Стретчинг'],
     'гибк': ['Йога', 'Пилатес', 'Стретчинг'],
@@ -49,7 +49,7 @@ FITNESS_ASSISTANT_GOALS = {
     'muscle_gain': {
         'label': 'Прокачать мышцы',
         'goal_text': 'набор массы',
-        'types': ['Силовая тренировка', 'ТРХ', 'Кроссфит'],
+        'types': ['Силовая тренировка', 'TRX', 'Кроссфит'],
         'frequency': '3 силовые тренировки в неделю',
         'focus': 'базовые силовые движения, рост нагрузки и полноценное восстановление',
     },
@@ -180,6 +180,9 @@ def build_fitness_assistant_plan(height_cm, weight_kg, goal_key):
     available_names = {workout_type.name for workout_type in WorkoutType.query.all()}
     goal = FITNESS_ASSISTANT_GOALS.get(goal_key, FITNESS_ASSISTANT_GOALS['wellness'])
     bmi = round(weight_kg / ((height_cm / 100) ** 2), 1)
+    advisory = None
+    focus = goal['focus']
+    frequency = goal['frequency']
 
     if bmi < 18.5:
         bmi_label = 'Ниже нормы'
@@ -194,16 +197,33 @@ def build_fitness_assistant_plan(height_cm, weight_kg, goal_key):
         bmi_label = 'Зона повышенного контроля'
         bmi_note = 'Лучше начинать с умеренной нагрузки и комфортного темпа, без резких перегрузок.'
 
-    recommended_types = [name for name in goal['types'] if name in available_names][:3]
+    if bmi >= 30 and goal_key == 'muscle_gain':
+        recommended_pool = ['Силовая тренировка', 'Функциональный тренинг', 'Кардио', 'TRX']
+        frequency = '3 тренировки в неделю с чередованием силы и умеренного кардио'
+        focus = 'силовая техника, адаптация суставов и умеренное кардио без резких перегрузок'
+        caution = 'Лучше сочетать силовые тренировки с умеренным кардио, чтобы безопасно войти в ритм.'
+        advisory = {
+            'title': 'Силовую цель лучше начать мягче',
+            'text': 'Оставьте силовую работу, но добавьте умеренное кардио и функциональную тренировку для адаптации.',
+        }
+    elif bmi < 18.5 and goal_key == 'weight_loss':
+        recommended_pool = ['Функциональный тренинг', 'Йога', 'Пилатес', 'Стретчинг']
+        frequency = '2-3 мягкие тренировки в неделю'
+        focus = 'бережный тонус, восстановление и регулярность без фокуса на снижении веса'
+        caution = 'Снижение веса сейчас не выглядит безопасным приоритетом. Лучше выбрать мягкий тонус, восстановление и регулярное питание.'
+        advisory = {
+            'title': 'Безопаснее сменить фокус',
+            'text': 'Вместо снижения веса начните с цели “Поддерживать форму” или “Улучшить гибкость”.',
+        }
+    else:
+        recommended_pool = goal['types']
+        caution = 'Начинайте с комфортного уровня и повышайте нагрузку постепенно, ориентируясь на самочувствие.'
+
+    recommended_types = [name for name in recommended_pool if name in available_names][:4]
     if not recommended_types:
         recommended_types = _recommend_workouts(goal['goal_text'])
 
-    if bmi >= 30 and goal_key == 'muscle_gain':
-        caution = 'Лучше сочетать силовые тренировки с умеренным кардио, чтобы безопасно войти в ритм.'
-    elif bmi < 18.5 and goal_key == 'weight_loss':
-        caution = 'Сильное снижение калорий и перегрузка сейчас не приоритетны. Лучше выбрать мягкий тонус и восстановление.'
-    else:
-        caution = 'Начинайте с комфортного уровня и повышайте нагрузку постепенно, ориентируясь на самочувствие.'
+    weekly_plan = _build_weekly_plan(recommended_types, goal_key, bmi)
 
     return {
         'goal_key': goal_key,
@@ -212,9 +232,11 @@ def build_fitness_assistant_plan(height_cm, weight_kg, goal_key):
         'bmi_label': bmi_label,
         'bmi_note': bmi_note,
         'recommended_types': recommended_types,
-        'recommended_frequency': goal['frequency'],
-        'focus': goal['focus'],
+        'recommended_frequency': frequency,
+        'focus': focus,
         'caution': caution,
+        'advisory': advisory,
+        'weekly_plan': weekly_plan,
     }
 
 
@@ -259,6 +281,48 @@ def _build_load_message(upcoming_week):
     if total_intensity <= len(upcoming_week) * 2:
         return 'Нагрузка выглядит сбалансированной, можно сохранять текущий темп.'
     return 'Нагрузка выше средней. Следите за восстановлением и качеством сна.'
+
+
+def _build_weekly_plan(recommended_types, goal_key, bmi):
+    if not recommended_types:
+        return []
+
+    if goal_key in ('weight_loss', 'endurance'):
+        slots = [
+            ('Понедельник', recommended_types[0], 'умеренный темп'),
+            ('Среда', recommended_types[1 % len(recommended_types)], 'основная тренировка недели'),
+            ('Пятница', recommended_types[2 % len(recommended_types)], 'легкая или средняя нагрузка'),
+            ('Воскресенье', recommended_types[0], 'короткая восстановительная сессия'),
+        ]
+    elif goal_key == 'muscle_gain' and bmi >= 30:
+        slots = [
+            ('Понедельник', recommended_types[0], 'силовая техника без перегруза'),
+            ('Среда', recommended_types[1 % len(recommended_types)], 'функциональная база'),
+            ('Суббота', recommended_types[2 % len(recommended_types)], 'умеренное кардио для адаптации'),
+        ]
+    elif goal_key == 'muscle_gain':
+        slots = [
+            ('Понедельник', recommended_types[0], 'базовая силовая работа'),
+            ('Среда', recommended_types[1 % len(recommended_types)], 'стабилизация и корпус'),
+            ('Пятница', recommended_types[2 % len(recommended_types)], 'силовая с контролем техники'),
+        ]
+    elif goal_key == 'flexibility':
+        slots = [
+            ('Вторник', recommended_types[0], 'мобильность и дыхание'),
+            ('Четверг', recommended_types[1 % len(recommended_types)], 'мягкая работа с корпусом'),
+            ('Суббота', recommended_types[2 % len(recommended_types)], 'растяжка и восстановление'),
+        ]
+    else:
+        slots = [
+            ('Понедельник', recommended_types[0], 'мягкий старт недели'),
+            ('Среда', recommended_types[1 % len(recommended_types)], 'основная тренировка'),
+            ('Суббота', recommended_types[2 % len(recommended_types)], 'закрепление ритма'),
+        ]
+
+    return [
+        {'day': day, 'workout_name': workout_name, 'note': note}
+        for day, workout_name, note in slots
+    ]
 
 
 def _build_user_action(risk_level, recommended_frequency, recommended_types):

@@ -56,12 +56,19 @@ TRAINER_CATALOG = [
 ]
 
 
+AUTO_SCHEDULE_DAYS = 21
+WEEKDAY_SLOTS = (7, 9, 12, 18, 20)
+WEEKEND_SLOTS = (10, 12, 14, 16)
+MAX_TRAINER_HOURS_PER_DAY = 6
+
+
 def ensure_trainers_and_balance_workouts():
     changed = ensure_trainers()
+    recurring = ensure_recurring_workout_schedule()
     scheduled = ensure_upcoming_workouts_for_all_trainers()
     covered_types = ensure_upcoming_workouts_for_all_types()
     balanced = rebalance_workouts()
-    if changed or scheduled or covered_types or balanced:
+    if changed or recurring or scheduled or covered_types or balanced:
         db.session.commit()
 
 
@@ -223,6 +230,66 @@ def ensure_upcoming_workouts_for_all_types():
     return changed
 
 
+def ensure_recurring_workout_schedule(days_ahead=AUTO_SCHEDULE_DAYS):
+    trainers = Trainer.query.order_by(Trainer.id).all()
+    workout_types = WorkoutType.query.order_by(WorkoutType.id).all()
+    if not trainers or not workout_types:
+        return False
+
+    now = datetime.now()
+    start_day = now.date()
+    horizon_end = now + timedelta(days=days_ahead)
+    upcoming_workouts = (
+        Workout.query.filter(
+            Workout.start_time >= now,
+            Workout.start_time < horizon_end,
+        )
+        .order_by(Workout.start_time, Workout.id)
+        .all()
+    )
+    changed = False
+
+    for day_offset in range(days_ahead):
+        target_date = start_day + timedelta(days=day_offset)
+        slots = WEEKEND_SLOTS if target_date.weekday() >= 5 else WEEKDAY_SLOTS
+
+        for slot_index, hour in enumerate(slots):
+            start_time = datetime.combine(target_date, datetime.min.time()).replace(hour=hour)
+            end_time = start_time + timedelta(hours=1)
+            if start_time <= now:
+                continue
+
+            workout_type = workout_types[(day_offset * len(slots) + slot_index) % len(workout_types)]
+            if _has_existing_workout(upcoming_workouts, workout_type.id, start_time):
+                continue
+
+            trainer = _pick_available_trainer_for_slot(
+                workout_type,
+                trainers,
+                upcoming_workouts,
+                start_time,
+                end_time,
+            )
+            if trainer is None:
+                continue
+
+            workout = Workout(
+                trainer_id=trainer.id,
+                workout_type_id=workout_type.id,
+                start_time=start_time,
+                end_time=end_time,
+                max_participants=14,
+                description=_build_recurring_description(trainer, workout_type),
+            )
+            db.session.add(workout)
+            upcoming_workouts.append(workout)
+            changed = True
+
+    if changed:
+        db.session.flush()
+    return changed
+
+
 def _has_overlap(schedule, start_time, end_time):
     for scheduled_start, scheduled_end in schedule:
         if scheduled_end > start_time and scheduled_start < end_time:
@@ -273,6 +340,52 @@ def _pick_trainer_for_workout_type(workout_type, trainers):
     return min(pool, key=lambda trainer: (len(trainer.workouts), trainer.id))
 
 
+def _has_existing_workout(workouts, workout_type_id, start_time):
+    return any(
+        workout.workout_type_id == workout_type_id and workout.start_time == start_time
+        for workout in workouts
+    )
+
+
+def _pick_available_trainer_for_slot(workout_type, trainers, workouts, start_time, end_time):
+    day_start = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = day_start + timedelta(days=1)
+    workout_name = (workout_type.name or '').lower()
+    candidates = []
+
+    for trainer in trainers:
+        trainer_workouts = [workout for workout in workouts if workout.trainer_id == trainer.id]
+        trainer_schedule = [
+            (workout.start_time, workout.end_time)
+            for workout in trainer_workouts
+        ]
+        if _has_overlap(trainer_schedule, start_time, end_time):
+            continue
+
+        daily_hours = sum(
+            (workout.end_time - workout.start_time).total_seconds() / 3600
+            for workout in trainer_workouts
+            if day_start <= workout.start_time < day_end
+        )
+        if daily_hours + 1 > MAX_TRAINER_HOURS_PER_DAY:
+            continue
+
+        meta = next(
+            (
+                spec for spec in TRAINER_CATALOG
+                if spec['first_name'] == trainer.first_name and spec['last_name'] == trainer.last_name
+            ),
+            None,
+        )
+        preferred = bool(meta and any(keyword in workout_name for keyword in meta['keywords']))
+        candidates.append((not preferred, daily_hours, len(trainer_workouts), trainer.id, trainer))
+
+    if not candidates:
+        return None
+
+    return min(candidates)[-1]
+
+
 def _find_open_slot(trainer, upcoming_workouts):
     trainer_workouts = [
         workout for workout in upcoming_workouts
@@ -302,4 +415,11 @@ def _build_generated_description(trainer, workout_type):
     return (
         f'Автоматически добавленная тренировка "{workout_type.name}" '
         f'для тренера {trainer.first_name} {trainer.last_name}.'
+    )
+
+
+def _build_recurring_description(trainer, workout_type):
+    return (
+        f'Регулярная тренировка "{workout_type.name}" '
+        f'с тренером {trainer.first_name} {trainer.last_name}.'
     )

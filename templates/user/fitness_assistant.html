@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Подбор тренировок - Fitness Gym{% endblock %}
+{% block title %}Подбор плана - Fitness Gym{% endblock %}
 
 {% block content %}
     <div class="space-y-6">
@@ -8,20 +8,31 @@
             <span class="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-50">
                 Персональный помощник
             </span>
-            <h1 class="mt-4 text-3xl font-semibold md:text-4xl">Подбор тренировок по параметрам</h1>
+            <h1 class="mt-4 text-3xl font-semibold md:text-4xl">Подбор плана тренировок</h1>
             <p class="mt-3 max-w-2xl text-sm leading-6 text-indigo-50/90 md:text-base">
-                Введите рост, вес и цель, а система подберет подходящее направление, темп и набор тренировок для старта.
+                Введите рост, вес и цель, а система подберет недельный ритм, подходящие направления и следующий шаг.
             </p>
         </section>
 
-        <div class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
-                <h2 class="text-2xl font-semibold text-slate-900">Ваши параметры</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-500">
-                    Расчет носит рекомендательный характер и помогает выбрать комфортное направление для начала.
-                </p>
+        <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <div class="grid gap-5 xl:grid-cols-[1fr_1.5fr] xl:items-end">
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-900">Ваши параметры</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                        Расчет носит рекомендательный характер и помогает выбрать комфортное направление для начала.
+                    </p>
+                    {% if saved_goal_label %}
+                        <p class="mt-3 rounded-2xl bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+                            {% if has_saved_plan %}
+                                Текущий план в профиле: <span class="font-semibold">{{ saved_goal_label }}</span>{% if plan_updated_at %}, обновлен {{ plan_updated_at.strftime('%d.%m.%Y') }}{% endif %}.
+                            {% else %}
+                                Цель в профиле: <span class="font-semibold">{{ saved_goal_label }}</span>. Чтобы появился текущий план, заполните рост и вес.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
 
-                <form method="post" class="mt-6 space-y-5">
+                <form method="post" action="{{ url_for('user.fitness_assistant') }}" class="grid gap-4 md:grid-cols-[1fr_1fr_1.2fr_auto] md:items-end">
                     <div>
                         <label for="height_cm" class="mb-2 block text-sm font-semibold text-slate-700">Рост, см</label>
                         <input
@@ -30,6 +41,7 @@
                             type="text"
                             value="{{ form_data.height_cm }}"
                             placeholder="Например, 175"
+                            inputmode="decimal"
                             class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400"
                         >
                     </div>
@@ -42,6 +54,7 @@
                             type="text"
                             value="{{ form_data.weight_kg }}"
                             placeholder="Например, 74"
+                            inputmode="decimal"
                             class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400"
                         >
                     </div>
@@ -62,17 +75,24 @@
                     </div>
 
                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
-                        Подобрать тренировки
+                        Подобрать план
                     </button>
                 </form>
-            </section>
+            </div>
+        </section>
 
-            <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+        <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
                 {% if recommendation %}
+                <div class="space-y-6">
+                <div class="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5 md:p-6">
+                <div class="mb-5">
+                    <div class="text-sm font-semibold uppercase tracking-[0.14em] text-indigo-700">Сводка</div>
+                    <h3 class="mt-1 text-xl font-semibold text-slate-900">Что подобрано</h3>
+                </div>
                 <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                         <div class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                            Рекомендация готова
+                            {% if has_saved_plan %}Текущий план{% else %}Рекомендация готова{% endif %}
                         </div>
                         <h2 class="mt-4 text-2xl font-semibold text-slate-900">{{ recommendation.goal_label }}</h2>
                         <p class="mt-2 text-sm leading-6 text-slate-500">
@@ -103,8 +123,156 @@
                     <div class="mt-2 text-sm leading-6">{{ recommendation.caution }}</div>
                 </div>
 
-                <div class="mt-6">
-                    <h3 class="text-lg font-semibold text-slate-900">Подходящие тренировки</h3>
+                {% if recommendation.advisory %}
+                <div class="mt-4 rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-blue-950">
+                    <div class="text-sm font-semibold">{{ recommendation.advisory.title }}</div>
+                    <div class="mt-2 text-sm leading-6">{{ recommendation.advisory.text }}</div>
+                </div>
+                {% endif %}
+                </div>
+
+                {% if smart_profile %}
+                <div class="rounded-[26px] border border-slate-200 bg-white p-5 md:p-6">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                            <div class="text-sm font-semibold uppercase tracking-[0.14em] text-indigo-700">Аналитика</div>
+                            <h3 class="text-lg font-semibold text-slate-900">Прогресс и ритм</h3>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">
+                                Этот блок смотрит на записи, посещения за последние 30 дней и абонемент, чтобы подсказать следующий шаг.
+                            </p>
+                        </div>
+                        <div class="rounded-2xl bg-indigo-50 px-4 py-3 text-right">
+                            <div class="text-xs uppercase tracking-[0.14em] text-indigo-500">Регулярность</div>
+                            <div class="mt-1 text-3xl font-semibold text-slate-900">{{ smart_profile.activity_score }}/100</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-3 md:grid-cols-3">
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Ритм</div>
+                            <div class="mt-2 text-sm font-semibold leading-5 text-slate-900">{{ smart_profile.recommended_frequency }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Неделя</div>
+                            <div class="mt-2 text-sm leading-5 text-slate-700">{{ smart_profile.load_message }}</div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Состояние</div>
+                            <div class="mt-2 text-sm font-semibold text-indigo-700">{{ smart_profile.risk_label }}</div>
+                        </div>
+                    </div>
+
+                    {% if smart_profile.risk_reasons %}
+                    <div class="mt-4">
+                        <div class="text-sm font-semibold text-slate-900">Что повлияло на оценку</div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            {% for reason in smart_profile.risk_reasons %}
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{{ reason }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if recommendation.weekly_plan %}
+                <div class="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5 md:p-6">
+                    <div class="text-sm font-semibold uppercase tracking-[0.14em] text-indigo-700">План</div>
+                    <h3 class="mt-1 text-lg font-semibold text-slate-900">План на неделю</h3>
+                    <div class="mt-4 grid gap-3 md:grid-cols-3">
+                        {% for item in recommendation.weekly_plan %}
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{{ item.day }}</div>
+                                    {% if item.date_label %}
+                                        <div class="mt-1 text-sm font-semibold text-slate-700">{{ item.date_label }}</div>
+                                    {% endif %}
+                                </div>
+                                {% if item.booking_status == 'matched' %}
+                                    <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">{{ item.booking_label }}</span>
+                                {% elif item.booking_status == 'same_day' %}
+                                    <span class="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ item.booking_label }}</span>
+                                {% else %}
+                                    <span class="shrink-0 rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">{{ item.booking_label }}</span>
+                                {% endif %}
+                            </div>
+                            {% if item.workout_id %}
+                                <a href="{{ url_for('user.workouts', type=item.workout_id) }}" class="mt-2 block text-base font-semibold text-indigo-700 hover:text-indigo-900">
+                                    {{ item.workout_name }}
+                                </a>
+                            {% else %}
+                                <div class="mt-2 text-base font-semibold text-slate-900">{{ item.workout_name }}</div>
+                            {% endif %}
+                            <div class="mt-2 text-sm leading-5 text-slate-600">{{ item.note }}</div>
+                            {% if item.booking_text %}
+                                <div class="mt-3 rounded-2xl bg-white px-3 py-2 text-xs font-medium leading-5 text-slate-600">
+                                    {{ item.booking_text }}
+                                </div>
+                            {% endif %}
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                {% if item.booking_status in ['matched', 'same_day'] %}
+                                    <a href="{{ url_for('user.schedule') }}" class="text-xs font-semibold text-indigo-700 hover:text-indigo-900">
+                                        Открыть расписание
+                                    </a>
+                                {% elif item.workout_id %}
+                                    <a href="{{ url_for('user.workouts', type=item.workout_id) }}" class="text-xs font-semibold text-indigo-700 hover:text-indigo-900">
+                                        Найти тренировку
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="rounded-[26px] border border-slate-200 bg-white p-5 md:p-6">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <div class="text-sm font-semibold uppercase tracking-[0.14em] text-indigo-700">Записи</div>
+                            <h3 class="mt-1 text-lg font-semibold text-slate-900">Записи на ближайшие 7 дней</h3>
+                            <p class="mt-1 text-sm leading-5 text-slate-500">
+                                Здесь видны все ваши реальные записи, даже если они не попали в рекомендованные дни плана.
+                            </p>
+                        </div>
+                        <a href="{{ url_for('user.schedule') }}" class="text-sm font-semibold text-indigo-700 hover:text-indigo-900">
+                            Открыть расписание
+                        </a>
+                    </div>
+
+                    {% if recommendation.upcoming_bookings %}
+                    <div class="mt-4 grid gap-3 md:grid-cols-2">
+                        {% for booking in recommendation.upcoming_bookings %}
+                        <div class="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-900">{{ booking.date_label }}</div>
+                                    <div class="mt-1 text-xs font-medium text-slate-500">{{ booking.time_label }}</div>
+                                </div>
+                                {% if booking.plan_status == 'in_plan' %}
+                                    <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">{{ booking.plan_label }}</span>
+                                {% elif booking.plan_status == 'same_day' %}
+                                    <span class="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ booking.plan_label }}</span>
+                                {% else %}
+                                    <span class="shrink-0 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">{{ booking.plan_label }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="mt-3 text-base font-semibold text-indigo-700">{{ booking.workout_name }}</div>
+                            <div class="mt-1 text-sm text-slate-600">{{ booking.trainer_name }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="mt-4 rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-4 text-sm text-slate-600">
+                        У вас пока нет записей на ближайшие 7 дней. Выберите удобный слот из плана или откройте все тренировки.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5 md:p-6">
+                    <div class="text-sm font-semibold uppercase tracking-[0.14em] text-indigo-700">Следующий шаг</div>
+                    <h3 class="mt-1 text-lg font-semibold text-slate-900">Подходящие тренировки</h3>
                     <div class="mt-4 flex flex-wrap gap-3">
                         {% for workout in recommendation.recommended_workouts %}
                         <a
@@ -115,16 +283,34 @@
                         </a>
                         {% endfor %}
                     </div>
+
+                <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                    {% if has_active_abonement %}
+                        <a href="{{ url_for('user.workouts') }}" class="inline-flex flex-1 items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                            Записаться по плану
+                        </a>
+                        <a href="{{ url_for('user.schedule') }}" class="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            Посмотреть расписание
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('abonements.index') }}" class="inline-flex flex-1 items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                            Оформить абонемент
+                        </a>
+                        <a href="{{ url_for('user.workouts') }}" class="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            Посмотреть тренировки
+                        </a>
+                    {% endif %}
+                </div>
+                </div>
                 </div>
                 {% else %}
                 <div class="flex h-full min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
                     <h2 class="text-2xl font-semibold text-slate-900">Здесь появится ваш план</h2>
                     <p class="mt-3 max-w-lg text-sm leading-6 text-slate-500">
-                        После ввода параметров система покажет ориентировочную оценку, рекомендуемую частоту занятий и тренировки, на которые можно перейти в один клик.
+                        После первого расчета план сохранится в профиле. При повторном входе здесь будет виден текущий недельный план, а форму можно будет использовать для пересчета.
                     </p>
                 </div>
                 {% endif %}
-            </section>
-        </div>
+        </section>
     </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, request, send_file
+from flask import Blueprint, render_template, jsonify, request, send_file, redirect, url_for
 from flask_login import login_required, current_user
 from models.models import Workout, Booking, Trainer, WorkoutType, User
 from models.database import db
@@ -12,6 +12,12 @@ import os
 
 # Создание блюпринта для аналитики
 analytics_bp = Blueprint('analytics', __name__)
+
+@analytics_bp.route('/')
+@login_required
+@admin_required
+def analytics_index():
+    return redirect(url_for('analytics.analytics_dashboard'))
 
 @analytics_bp.route('/dashboard')
 @login_required

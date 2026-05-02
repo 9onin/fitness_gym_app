@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, render_template
 from flask_login import current_user
 
@@ -59,8 +61,14 @@ WORKOUT_SUMMARIES = {
 @main_bp.route('/')
 @main_bp.route('/index')
 def index():
-    upcoming_workouts = Workout.query.order_by(Workout.start_time).limit(5).all()
+    upcoming_workouts = (
+        Workout.query.filter(Workout.start_time >= datetime.now())
+        .order_by(Workout.start_time)
+        .limit(5)
+        .all()
+    )
     workout_types = WorkoutType.query.all()
+    featured_workout_types = workout_types[:8]
     smart_profile = build_client_intelligence(current_user) if current_user.is_authenticated else None
     recommended_workouts = []
 
@@ -77,6 +85,7 @@ def index():
         title='Главная',
         upcoming_workouts=upcoming_workouts,
         workout_types=workout_types,
+        featured_workout_types=featured_workout_types,
         energy_levels=ENERGY_LEVELS,
         workout_summaries=WORKOUT_SUMMARIES,
         smart_profile=smart_profile,

@@ -39,6 +39,20 @@ function toggleMobileMenu() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.querySelector('[data-mobile-menu-toggle]');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (!toggle || !mobileMenu) {
+        return;
+    }
+
+    toggle.addEventListener('click', function() {
+        const isHidden = mobileMenu.classList.toggle('hidden');
+        toggle.setAttribute('aria-expanded', String(!isHidden));
+    });
+});
+
 // Initialize any datetime pickers
 document.addEventListener('DOMContentLoaded', function() {
     const datetimeInputs = document.querySelectorAll('input[type="datetime-local"]');

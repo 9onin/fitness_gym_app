@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, flash
+from flask import Flask, redirect, render_template, url_for
 from flask_login import LoginManager
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
@@ -130,6 +130,10 @@ def create_app(test_config=None):
         return {
             'now': datetime.now
         }
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return redirect(url_for('static', filename='favicon.svg'))
 
     return app
 

@@ -6,6 +6,7 @@
     <title>{% block title %}Fitness Gym{% endblock %}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -16,8 +17,21 @@
                 <a href="{{ url_for('main.index') }}" class="text-xl font-bold">Fitness Gym</a>
             </div>
 
-            <nav>
-                <ul class="flex space-x-4">
+            <button
+                type="button"
+                class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded bg-indigo-800 hover:bg-indigo-900"
+                data-mobile-menu-toggle
+                aria-controls="mobile-menu"
+                aria-expanded="false"
+            >
+                <span class="sr-only">Открыть меню</span>
+                <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 7h16M4 12h16M4 17h16"/>
+                </svg>
+            </button>
+
+            <nav class="hidden md:block">
+                <ul class="flex items-center space-x-4">
                     <li><a href="{{ url_for('main.index') }}" class="hover:text-indigo-200">Главная</a></li>
 
                     {% if current_user.is_authenticated %}
@@ -44,6 +58,34 @@
                 </ul>
             </nav>
         </div>
+
+        <nav id="mobile-menu" class="hidden border-t border-indigo-600 bg-indigo-800 md:hidden">
+            <ul class="container mx-auto flex flex-col gap-1 px-4 py-3">
+                <li><a href="{{ url_for('main.index') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Главная</a></li>
+
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('user.workouts') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Тренировки</a></li>
+                    <li><a href="{{ url_for('user.fitness_assistant') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Подбор плана</a></li>
+                    <li><a href="{{ url_for('user.schedule') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Мое расписание</a></li>
+                    <li><a href="{{ url_for('abonements.index') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Абонементы</a></li>
+                    <li><a href="{{ url_for('abonements.my_abonements') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Мои абонементы</a></li>
+
+                    {% if current_user.is_admin %}
+                        <li><a href="{{ url_for('admin.dashboard') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Админ-панель</a></li>
+                        <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Аналитика</a></li>
+                    {% endif %}
+
+                    <li>
+                        <form action="{{ url_for('auth.logout') }}" method="get">
+                            <button type="submit" class="block w-full rounded px-3 py-2 text-left hover:bg-indigo-700">Выйти</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.login') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Вход</a></li>
+                    <li><a href="{{ url_for('auth.register') }}" class="block rounded bg-indigo-900 px-3 py-2 hover:bg-indigo-700">Регистрация</a></li>
+                {% endif %}
+            </ul>
+        </nav>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

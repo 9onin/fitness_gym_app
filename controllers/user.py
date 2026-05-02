@@ -36,6 +36,13 @@ def get_valid_abonement(user_id):
 def schedule():
     ensure_trainers_and_balance_workouts()
     today = datetime.now().date()
+    history_days = request.args.get('history_days', 90, type=int)
+    history_page = max(request.args.get('history_page', 1, type=int), 1)
+    per_page = 20
+
+    allowed_history_days = {30, 90, 180, 365}
+    if history_days not in allowed_history_days:
+        history_days = 90
 
     future_bookings = (
         Booking.query.join(Workout)
@@ -43,10 +50,20 @@ def schedule():
         .order_by(Workout.start_time)
         .all()
     )
-    past_bookings = (
+    past_query = (
         Booking.query.join(Workout)
         .filter(Booking.user_id == current_user.id, Workout.start_time < today)
-        .order_by(Workout.start_time.desc())
+    )
+
+    history_start = datetime.now() - timedelta(days=history_days)
+    past_query = past_query.filter(Workout.start_time >= history_start)
+    past_total = past_query.count()
+    past_pages = max((past_total + per_page - 1) // per_page, 1)
+    history_page = min(history_page, past_pages)
+    past_bookings = (
+        past_query.order_by(Workout.start_time.desc())
+        .offset((history_page - 1) * per_page)
+        .limit(per_page)
         .all()
     )
 
@@ -63,6 +80,10 @@ def schedule():
         title='Моё расписание',
         future_bookings=future_bookings,
         past_bookings=past_bookings,
+        history_days=history_days,
+        history_page=history_page,
+        history_pages=past_pages,
+        past_total=past_total,
         workout_notifications=workout_notifications,
         smart_profile=build_client_intelligence(current_user),
     )

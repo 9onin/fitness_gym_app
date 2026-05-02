@@ -160,9 +160,14 @@ def login(client, email, password):
     """
     Вспомогательная функция для входа в систему
     """
+    client.get('/auth/login')
+    with client.session_transaction() as sess:
+        captcha_answer = sess.get('captcha_answer', '')
+
     return client.post('/auth/login', data={
         'email': email,
-        'password': password
+        'password': password,
+        'captcha_answer': captcha_answer
     }, follow_redirects=True)
 
 def logout(client):

@@ -16,7 +16,7 @@
                     <p class="text-sm text-green-700">
                         <strong>Ваш абонемент:</strong> {{ valid_abonement.abonement.name }}
                         {% if valid_abonement.visits_remaining is not none %}
-                            ({{ valid_abonement.visits_remaining }} посещений оставлось)
+                            (осталось {{ valid_abonement.visits_remaining }} посещений)
                         {% else %}
                             (Безлимит)
                         {% endif %}
@@ -74,7 +74,7 @@
                         {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
                         
                         <a href="{{ url_for('user.workouts') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
-                            Отмена
+                            Вернуться к списку
                         </a>
                     </div>
                 </form>

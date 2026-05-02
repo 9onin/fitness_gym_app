@@ -521,6 +521,8 @@ def make_admin(user_id):
     
     if user.is_admin:
         flash(f'Пользователь {user.email} уже является администратором', 'info')
+    elif request.form.get('confirm_admin') != 'yes':
+        flash('Подтвердите назначение администратора.', 'warning')
     else:
         user.is_admin = True
         db.session.commit()

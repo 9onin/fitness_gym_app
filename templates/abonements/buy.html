@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <a href="{{ url_for('abonements.index') }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 mb-6 text-sm font-medium">
+    <a href="{{ url_for('abonements.index', next=next_url) if next_url else url_for('abonements.index') }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 mb-6 text-sm font-medium">
         ← Назад к абонементам
     </a>
 
@@ -86,6 +86,9 @@
 
             <form method="POST" class="space-y-5">
                 {{ form.hidden_tag() }}
+                {% if next_url %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                {% endif %}
 
                 <div>
                     <label for="{{ form.cardholder_name.id }}" class="block text-sm font-medium text-gray-700 mb-2">{{ form.cardholder_name.label.text }}</label>

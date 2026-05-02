@@ -34,17 +34,23 @@
                 <ul class="flex items-center space-x-4">
                     <li><a href="{{ url_for('main.index') }}" class="hover:text-indigo-200">Главная</a></li>
 
-                    {% if current_user.is_authenticated %}
+                    {% if current_user.is_authenticated and current_user.is_admin %}
+                        <li><a href="{{ url_for('admin.dashboard') }}" class="hover:text-indigo-200">Админ-панель</a></li>
+                        <li><a href="{{ url_for('admin.users') }}" class="hover:text-indigo-200">Клиенты</a></li>
+                        <li><a href="{{ url_for('admin.admin_workouts') }}" class="hover:text-indigo-200">Тренировки</a></li>
+                        <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="hover:text-indigo-200">Аналитика</a></li>
+
+                        <li>
+                            <form action="{{ url_for('auth.logout') }}" method="get" class="inline">
+                                <button type="submit" class="bg-indigo-800 hover:bg-indigo-900 px-3 py-1 rounded">Выйти</button>
+                            </form>
+                        </li>
+                    {% elif current_user.is_authenticated %}
                         <li><a href="{{ url_for('user.workouts') }}" class="hover:text-indigo-200">Тренировки</a></li>
                         <li><a href="{{ url_for('user.fitness_assistant') }}" class="hover:text-indigo-200">Подбор плана</a></li>
                         <li><a href="{{ url_for('user.schedule') }}" class="hover:text-indigo-200">Мое расписание</a></li>
                         <li><a href="{{ url_for('abonements.index') }}" class="hover:text-white">Абонементы</a></li>
                         <li><a href="{{ url_for('abonements.my_abonements') }}" class="hover:text-white">Мои абонементы</a></li>
-
-                        {% if current_user.is_admin %}
-                            <li><a href="{{ url_for('admin.dashboard') }}" class="hover:text-indigo-200">Админ-панель</a></li>
-                            <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="hover:text-indigo-200">Аналитика</a></li>
-                        {% endif %}
 
                         <li>
                             <form action="{{ url_for('auth.logout') }}" method="get" class="inline">
@@ -63,17 +69,23 @@
             <ul class="container mx-auto flex flex-col gap-1 px-4 py-3">
                 <li><a href="{{ url_for('main.index') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Главная</a></li>
 
-                {% if current_user.is_authenticated %}
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                    <li><a href="{{ url_for('admin.dashboard') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Админ-панель</a></li>
+                    <li><a href="{{ url_for('admin.users') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Клиенты</a></li>
+                    <li><a href="{{ url_for('admin.admin_workouts') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Тренировки</a></li>
+                    <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Аналитика</a></li>
+
+                    <li>
+                        <form action="{{ url_for('auth.logout') }}" method="get">
+                            <button type="submit" class="block w-full rounded px-3 py-2 text-left hover:bg-indigo-700">Выйти</button>
+                        </form>
+                    </li>
+                {% elif current_user.is_authenticated %}
                     <li><a href="{{ url_for('user.workouts') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Тренировки</a></li>
                     <li><a href="{{ url_for('user.fitness_assistant') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Подбор плана</a></li>
                     <li><a href="{{ url_for('user.schedule') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Мое расписание</a></li>
                     <li><a href="{{ url_for('abonements.index') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Абонементы</a></li>
                     <li><a href="{{ url_for('abonements.my_abonements') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Мои абонементы</a></li>
-
-                    {% if current_user.is_admin %}
-                        <li><a href="{{ url_for('admin.dashboard') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Админ-панель</a></li>
-                        <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Аналитика</a></li>
-                    {% endif %}
 
                     <li>
                         <form action="{{ url_for('auth.logout') }}" method="get">
@@ -125,7 +137,12 @@
                     <h3 class="text-lg font-semibold mb-3">Быстрые ссылки</h3>
                     <ul class="space-y-1 text-gray-300">
                         <li><a href="{{ url_for('main.index') }}" class="hover:text-white">Главная</a></li>
-                        {% if current_user.is_authenticated %}
+                        {% if current_user.is_authenticated and current_user.is_admin %}
+                            <li><a href="{{ url_for('admin.dashboard') }}" class="hover:text-white">Админ-панель</a></li>
+                            <li><a href="{{ url_for('admin.users') }}" class="hover:text-white">Клиенты</a></li>
+                            <li><a href="{{ url_for('admin.admin_workouts') }}" class="hover:text-white">Тренировки</a></li>
+                            <li><a href="{{ url_for('analytics.analytics_dashboard') }}" class="hover:text-white">Аналитика</a></li>
+                        {% elif current_user.is_authenticated %}
                             <li><a href="{{ url_for('user.workouts') }}" class="hover:text-white">Тренировки</a></li>
                             <li><a href="{{ url_for('user.fitness_assistant') }}" class="hover:text-white">Подбор плана</a></li>
                             <li><a href="{{ url_for('user.schedule') }}" class="hover:text-white">Мое расписание</a></li>

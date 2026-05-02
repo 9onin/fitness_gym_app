@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -230,6 +231,18 @@ def build_abonement_notifications(user_abonements):
     return notifications
 
 
+def get_safe_next_url():
+    next_url = request.args.get('next') or request.form.get('next')
+    if not next_url:
+        return None
+
+    parsed = urlparse(next_url)
+    if parsed.scheme or parsed.netloc or not next_url.startswith('/'):
+        return None
+
+    return next_url
+
+
 def build_workout_notifications(user_id):
     now = datetime.utcnow()
     next_day = now + timedelta(hours=24)
@@ -254,15 +267,30 @@ def build_workout_notifications(user_id):
 @abonements_bp.route('/')
 def index():
     sync_abonement_catalog()
-    abonements = [build_abonement_view(item) for item in Abonement.query.filter_by(is_active=True).all()]
-    return render_template('abonements/index.html', abonements=abonements, title='Наши абонементы')
+    sort_order = {'trial': 0, 'basic': 1, 'package': 2, 'vip': 3}
+    abonement_models = sorted(
+        Abonement.query.filter_by(is_active=True).all(),
+        key=lambda item: (sort_order.get(item.type, 99), item.price),
+    )
+    abonements = [build_abonement_view(item) for item in abonement_models]
+    return render_template(
+        'abonements/index.html',
+        abonements=abonements,
+        next_url=get_safe_next_url(),
+        title='Наши абонементы',
+    )
 
 
 @abonements_bp.route('/abonement/<int:abonement_id>')
 def abonement_detail(abonement_id):
     sync_abonement_catalog()
     abonement = Abonement.query.get_or_404(abonement_id)
-    return render_template('abonements/abonement_detail.html', abonement=build_abonement_view(abonement), title=abonement.name)
+    return render_template(
+        'abonements/abonement_detail.html',
+        abonement=build_abonement_view(abonement),
+        next_url=get_safe_next_url(),
+        title=abonement.name,
+    )
 
 
 @abonements_bp.route('/api/abonements')
@@ -305,6 +333,8 @@ def filter_abonements():
     else:
         abonements = Abonement.query.filter_by(is_active=True, type=filter_type).all()
 
+    sort_order = {'trial': 0, 'basic': 1, 'package': 2, 'vip': 3}
+    abonements = sorted(abonements, key=lambda item: (sort_order.get(item.type, 99), item.price))
     return jsonify([build_abonement_view(item) for item in abonements])
 
 
@@ -315,6 +345,7 @@ def buy_abonement(abonement_id):
     abonement_model = Abonement.query.get_or_404(abonement_id)
     abonement = build_abonement_view(abonement_model)
     form = AbonementPaymentForm()
+    next_url = get_safe_next_url()
 
     if form.validate_on_submit():
         processor = TestPaymentProcessor()
@@ -331,7 +362,7 @@ def buy_abonement(abonement_id):
             )
         except PaymentValidationError as error:
             form.card_number.errors.append(str(error))
-            return render_template('abonements/buy.html', abonement=abonement, form=form, title=f"Купить {abonement['name']}")
+            return render_template('abonements/buy.html', abonement=abonement, form=form, next_url=next_url, title=f"Купить {abonement['name']}")
 
         expiration_date = datetime.utcnow() + timedelta(days=abonement['duration_days'])
         user_abonement = UserAbonement(
@@ -353,9 +384,9 @@ def buy_abonement(abonement_id):
         db.session.commit()
 
         flash(f'Онлайн-оплата прошла успешно. Абонемент "{abonement["name"]}" уже активирован!', 'success')
-        return redirect(url_for('abonements.my_abonements'))
+        return redirect(next_url or url_for('abonements.my_abonements'))
 
-    return render_template('abonements/buy.html', abonement=abonement, form=form, title=f"Купить {abonement['name']}")
+    return render_template('abonements/buy.html', abonement=abonement, form=form, next_url=next_url, title=f"Купить {abonement['name']}")
 
 
 @abonements_bp.route('/extend/<int:user_abonement_id>', methods=['POST'])

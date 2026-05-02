@@ -91,6 +91,20 @@ def build_client_intelligence(user):
         if abonement.is_active and abonement.expiration_date >= now
     ]
 
+    recommended_types = _recommend_workouts(user.fitness_goal)
+    if not all_bookings and not active_abonements:
+        return {
+            'activity_score': 0,
+            'risk_level': 'new',
+            'risk_label': 'Новый клиент',
+            'risk_reasons': ['клиент только начинает путь в клубе'],
+            'recommended_types': recommended_types,
+            'recommended_frequency': '2 тренировки в неделю для плавного старта',
+            'load_message': 'Пока нет записей. Начните с покупки абонемента и первой тренировки в удобное время.',
+            'user_action': 'Начните с простого маршрута: выберите цель, оформите подходящий абонемент и запишитесь на первую тренировку.',
+            'admin_action': 'Новый клиент. Помогите выбрать первый абонемент и довести до первой записи на тренировку.',
+        }
+
     last_booking_date = None
     if all_bookings:
         workout_dates = [booking.workout.start_time for booking in all_bookings if booking.workout]
@@ -141,7 +155,6 @@ def build_client_intelligence(user):
         risk_label = 'Высокий риск'
         admin_action = 'Нужен персональный контакт: продление, заморозка или возврат клиента в расписание.'
 
-    recommended_types = _recommend_workouts(user.fitness_goal)
     recommended_frequency = _recommend_frequency(user.fitness_goal, recent_visits)
     load_message = _build_load_message(upcoming_week)
     user_action = _build_user_action(risk_level, recommended_frequency, recommended_types)

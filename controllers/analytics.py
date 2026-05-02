@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_, case, select
 from controllers.admin import admin_required
 from services.report_service import generate_pdf_report, generate_excel_report
-import calendar
 import io
 import os
 
@@ -124,8 +123,21 @@ def trainer_workload():
     trainer_names = [f"{item[0]} {item[1]}" for item in processed_stats]
     total_hours = [item[2] for item in processed_stats]
     
-    # Получаем список всех месяцев для селектора
-    months = [(i, calendar.month_name[i]) for i in range(1, 13)]
+    month_names_ru = [
+        'Январь',
+        'Февраль',
+        'Март',
+        'Апрель',
+        'Май',
+        'Июнь',
+        'Июль',
+        'Август',
+        'Сентябрь',
+        'Октябрь',
+        'Ноябрь',
+        'Декабрь',
+    ]
+    months = [(i, month_names_ru[i - 1]) for i in range(1, 13)]
     
     # Если запрос на получение JSON данных
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -140,7 +152,7 @@ def trainer_workload():
                          months=months,
                          selected_month=month,
                          selected_year=year,
-                         current_month_name=calendar.month_name[month])
+                         current_month_name=month_names_ru[month - 1])
 
 @analytics_bp.route('/attendance')
 @login_required

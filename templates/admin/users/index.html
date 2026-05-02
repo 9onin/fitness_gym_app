@@ -58,6 +58,8 @@
                                 <td class="py-3 px-4 text-center">
                                     {% if user.is_admin %}
                                         <span class="text-slate-400">—</span>
+                                    {% elif smart.risk_level == 'new' %}
+                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{{ smart.risk_label }}</span>
                                     {% elif smart.risk_level == 'low' %}
                                         <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">{{ smart.risk_label }}</span>
                                     {% elif smart.risk_level == 'medium' %}
@@ -73,9 +75,15 @@
                                             Карточка
                                         </a>
                                         {% if not user.is_admin %}
-                                            <form action="{{ url_for('admin.make_admin', user_id=user.id) }}" method="post" class="inline">
-                                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-sm font-medium">
-                                                    Сделать администратором
+                                            <form
+                                                action="{{ url_for('admin.make_admin', user_id=user.id) }}"
+                                                method="post"
+                                                class="inline"
+                                                onsubmit="return confirm('Назначить {{ user.email }} администратором? Это даст полный доступ к управлению приложением.');"
+                                            >
+                                                <input type="hidden" name="confirm_admin" value="yes">
+                                                <button type="submit" class="bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded text-sm font-medium">
+                                                    Назначить админом
                                                 </button>
                                             </form>
                                         {% endif %}

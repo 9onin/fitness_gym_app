@@ -18,6 +18,19 @@ from services.trainer_balance_service import ensure_trainers_and_balance_workout
 user_bp = Blueprint('user', __name__)
 
 
+def get_refundable_abonement(user_id):
+    return (
+        UserAbonement.query.filter(
+            UserAbonement.user_id == user_id,
+            UserAbonement.is_active == True,
+            UserAbonement.expiration_date > datetime.utcnow(),
+            UserAbonement.visits_remaining != None,
+        )
+        .order_by(UserAbonement.purchase_date.desc())
+        .first()
+    )
+
+
 def get_valid_abonement(user_id):
     return (
         UserAbonement.query.filter(
@@ -221,17 +234,17 @@ def book_workout(workout_id):
     valid_abonement = get_valid_abonement(current_user.id)
     if not valid_abonement:
         flash('У вас нет действующего активного абонемента. Если абонемент заморожен, дождитесь окончания заморозки или купите новый.', 'warning')
-        return redirect(url_for('abonements.index'))
+        next_url = url_for('user.book_workout', workout_id=workout.id)
+        return redirect(url_for('abonements.index', next=next_url))
 
     form = BookingForm()
     if form.validate_on_submit():
         booking = Booking(user_id=current_user.id, workout_id=workout.id)
-        db.session.add(booking)
-        db.session.commit()
-
         if valid_abonement.visits_remaining is not None:
             valid_abonement.visits_remaining -= 1
+            booking.visit_charged = True
 
+        db.session.add(booking)
         db.session.commit()
         send_booking_confirmation(current_user, workout)
 
@@ -259,6 +272,11 @@ def cancel_booking(booking_id):
     if booking.workout.start_time < datetime.now():
         flash('Невозможно отменить запись на прошедшую тренировку', 'danger')
         return redirect(url_for('user.schedule'))
+
+    if booking.visit_charged:
+        refundable_abonement = get_refundable_abonement(current_user.id)
+        if refundable_abonement:
+            refundable_abonement.visits_remaining += 1
 
     db.session.delete(booking)
     db.session.commit()

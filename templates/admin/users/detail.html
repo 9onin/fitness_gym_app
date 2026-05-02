@@ -52,7 +52,7 @@
                     </div>
                     <div class="rounded-xl bg-white px-4 py-3 shadow-sm">
                         <div class="text-xs text-slate-500">Риск</div>
-                        <div class="mt-1 text-sm font-semibold {% if smart_profile.risk_level == 'low' %}text-emerald-700{% elif smart_profile.risk_level == 'medium' %}text-amber-700{% else %}text-rose-700{% endif %}">
+                        <div class="mt-1 text-sm font-semibold {% if smart_profile.risk_level == 'new' %}text-blue-700{% elif smart_profile.risk_level == 'low' %}text-emerald-700{% elif smart_profile.risk_level == 'medium' %}text-amber-700{% else %}text-rose-700{% endif %}">
                             {{ smart_profile.risk_label }}
                         </div>
                     </div>

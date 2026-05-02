@@ -85,7 +85,7 @@
                        class="text-center py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">
                         Подробнее
                     </a>
-                    <a href="{{ url_for('abonements.buy_abonement', abonement_id=abonement.id) }}"
+                    <a href="{{ url_for('abonements.buy_abonement', abonement_id=abonement.id, next=next_url) if next_url else url_for('abonements.buy_abonement', abonement_id=abonement.id) }}"
                        class="text-center py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity"
                        style="background-color: {{ abonement.color }}">
                         Купить
@@ -107,6 +107,8 @@
 
 {% block scripts %}
 <script>
+const abonementNextUrl = {{ (next_url or '')|tojson }};
+
 async function filterAbonements(type, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -126,6 +128,7 @@ function renderCards(abonements) {
 }
 
 function buildCard(a) {
+    const nextQuery = abonementNextUrl ? `?next=${encodeURIComponent(abonementNextUrl)}` : '';
     const discountHtml = a.discount > 0
         ? `<div class="text-gray-400 line-through text-sm">${a.price} ₽</div><div class="text-3xl font-bold text-gray-900">${a.final_price} ₽</div>`
         : `<div class="text-3xl font-bold text-gray-900">${a.price} ₽</div>`;
@@ -172,8 +175,8 @@ function buildCard(a) {
             ${promoHtml}
             <ul class="space-y-2 mb-6 flex-1">${features}</ul>
             <div class="grid grid-cols-2 gap-3 mt-auto">
-                <a href="/abonements/abonement/${a.id}" class="text-center py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">Подробнее</a>
-                <a href="/abonements/buy/${a.id}" class="text-center py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity" style="background-color: ${a.color}">Купить</a>
+                <a href="/abonements/abonement/${a.id}${nextQuery}" class="text-center py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">Подробнее</a>
+                <a href="/abonements/buy/${a.id}${nextQuery}" class="text-center py-3 rounded-xl text-white font-semibold hover:opacity-90 transition-opacity" style="background-color: ${a.color}">Купить</a>
             </div>
         </div>`;
     return card;

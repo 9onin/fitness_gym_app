@@ -205,6 +205,42 @@ def test_register_page(client):
     assert b'first_name' in response.data
     assert b'last_name' in response.data
 
+def test_mobile_app_shell(client):
+    """
+    Тест для мобильной оболочки приложения
+    """
+    response = client.get('/')
+    assert response.status_code == 200
+    assert b'manifest.webmanifest' in response.data
+    assert b'mobile-tab-bar' in response.data
+    assert b'apple-mobile-web-app-capable' in response.data
+
+def test_pwa_manifest(client):
+    """
+    Тест для PWA-манифеста
+    """
+    response = client.get('/manifest.webmanifest')
+    assert response.status_code == 200
+    assert response.mimetype == 'application/manifest+json'
+
+    manifest = response.get_json()
+    assert manifest['name'] == 'Fitness Gym'
+    assert manifest['display'] == 'standalone'
+    assert manifest['start_url'] == '/?source=pwa'
+    assert manifest['icons']
+    assert manifest['icons'][0]['src'] == '/static/icon-192.png'
+
+def test_service_worker(client):
+    """
+    Тест для service worker мобильного приложения
+    """
+    response = client.get('/service-worker.js')
+    assert response.status_code == 200
+    assert response.mimetype == 'application/javascript'
+    assert response.headers['Service-Worker-Allowed'] == '/'
+    assert b'fitness-gym-mobile' in response.data
+    assert b'/static/offline.html' in response.data
+
 # Тесты для аутентификации
 def test_login_success(client):
     """
@@ -327,6 +363,9 @@ class TestAll:
         test_homepage(client)
         test_login_page(client)
         test_register_page(client)
+        test_mobile_app_shell(client)
+        test_pwa_manifest(client)
+        test_service_worker(client)
         
         # Тесты аутентификации
         test_login_success(client)

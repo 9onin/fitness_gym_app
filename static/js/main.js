@@ -47,10 +47,82 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    function closeMobileMenu() {
+        mobileMenu.classList.add('hidden');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+
     toggle.addEventListener('click', function() {
         const isHidden = mobileMenu.classList.toggle('hidden');
         toggle.setAttribute('aria-expanded', String(!isHidden));
     });
+
+    mobileMenu.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', closeMobileMenu);
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeMobileMenu();
+        }
+    });
+
+    document.addEventListener('click', function(event) {
+        const clickedInsideMenu = mobileMenu.contains(event.target);
+        const clickedToggle = toggle.contains(event.target);
+
+        if (!clickedInsideMenu && !clickedToggle) {
+            closeMobileMenu();
+        }
+    });
+});
+
+// Progressive web app install and offline shell
+document.addEventListener('DOMContentLoaded', function() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').catch(function(error) {
+            console.warn('Service worker registration failed:', error);
+        });
+    }
+
+    let installPrompt = null;
+    const installButtons = document.querySelectorAll('[data-install-app]');
+
+    function showInstallButtons() {
+        installButtons.forEach(function(button) {
+            button.hidden = false;
+            button.classList.remove('hidden');
+        });
+    }
+
+    function hideInstallButtons() {
+        installButtons.forEach(function(button) {
+            button.hidden = true;
+            button.classList.add('hidden');
+        });
+    }
+
+    window.addEventListener('beforeinstallprompt', function(event) {
+        event.preventDefault();
+        installPrompt = event;
+        showInstallButtons();
+    });
+
+    installButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            if (!installPrompt) {
+                return;
+            }
+
+            installPrompt.prompt();
+            installPrompt.userChoice.finally(function() {
+                installPrompt = null;
+                hideInstallButtons();
+            });
+        });
+    });
+
+    window.addEventListener('appinstalled', hideInstallButtons);
 });
 
 // Initialize any datetime pickers

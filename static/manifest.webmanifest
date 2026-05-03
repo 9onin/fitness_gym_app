@@ -1,0 +1,53 @@
+{
+  "name": "Fitness Gym",
+  "short_name": "Fitness",
+  "description": "Мобильное приложение Fitness Gym для записи на тренировки и контроля расписания.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#4338ca",
+  "categories": ["fitness", "health", "sports"],
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Тренировки",
+      "short_name": "Тренировки",
+      "url": "/user/workouts",
+      "icons": [
+        {
+          "src": "/static/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Моё расписание",
+      "short_name": "Расписание",
+      "url": "/user/schedule",
+      "icons": [
+        {
+          "src": "/static/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

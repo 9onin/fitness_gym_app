@@ -1,5 +1,5 @@
 import os
-from flask import Flask, redirect, render_template, url_for
+from flask import Flask, make_response, redirect, render_template, send_from_directory, url_for
 from flask_login import LoginManager
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
@@ -134,6 +134,25 @@ def create_app(test_config=None):
     @app.route('/favicon.ico')
     def favicon():
         return redirect(url_for('static', filename='favicon.svg'))
+
+    @app.route('/manifest.webmanifest')
+    def webmanifest():
+        return send_from_directory(
+            app.static_folder,
+            'manifest.webmanifest',
+            mimetype='application/manifest+json',
+        )
+
+    @app.route('/service-worker.js')
+    def service_worker():
+        response = make_response(send_from_directory(
+            app.static_folder,
+            'service-worker.js',
+            mimetype='application/javascript',
+        ))
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Service-Worker-Allowed'] = '/'
+        return response
 
     return app
 

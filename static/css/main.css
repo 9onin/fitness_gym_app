@@ -1,5 +1,86 @@
 /* Custom styles for Fitness Gym App */
 
+:root {
+    color-scheme: light;
+    --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --app-safe-top: env(safe-area-inset-top, 0px);
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+.app-shell {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    padding-top: var(--app-safe-top);
+}
+
+.mobile-tab-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+    padding: 0.45rem 0.6rem calc(0.45rem + var(--app-safe-bottom));
+    border-top: 1px solid rgba(226, 232, 240, 0.95);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 -14px 32px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(14px);
+}
+
+.mobile-tab-item {
+    min-width: 0;
+    min-height: 3.25rem;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    border-radius: 0.5rem;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.mobile-tab-item svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    fill: currentColor;
+}
+
+.mobile-tab-item span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mobile-tab-item:hover,
+.mobile-tab-item:focus,
+.mobile-tab-item.is-active {
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+[data-install-app][hidden],
+[data-install-app].hidden {
+    display: none !important;
+}
+
 body.home-page {
     background:
         linear-gradient(rgba(7, 12, 22, 0.72), rgba(7, 12, 22, 0.82)),
@@ -93,14 +174,88 @@ body.home-page section > h2 {
 }
 
 @media (max-width: 768px) {
+    body {
+        padding-bottom: calc(4.5rem + var(--app-safe-bottom));
+    }
+
+    .app-main {
+        width: 100%;
+        padding-top: 1rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .app-main h1 {
+        font-size: clamp(1.85rem, 9vw, 2.5rem);
+        line-height: 1.12;
+    }
+
+    .app-main h2 {
+        line-height: 1.18;
+    }
+
+    .app-main a,
+    .app-main button,
+    .app-main input,
+    .app-main select,
+    .app-main textarea {
+        min-height: 2.75rem;
+    }
+
+    .app-main input,
+    .app-main select,
+    .app-main textarea {
+        width: 100%;
+        max-width: 100%;
+        font-size: 1rem;
+    }
+
+    .app-main table {
+        min-width: 42rem;
+    }
+
+    footer {
+        display: none;
+    }
+
     body.home-page {
         background-attachment: scroll;
         background-position: center center;
     }
 
+    .homepage-hero {
+        margin-right: -0.25rem;
+        margin-left: -0.25rem;
+        padding: 1.75rem 1.25rem;
+        border-radius: 0.5rem;
+    }
+
+    .homepage-hero p {
+        font-size: 1rem;
+        line-height: 1.55;
+    }
+
     .homepage-hero,
     .homepage-panel {
         backdrop-filter: none;
+    }
+
+    .intensity-filter-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .intensity-filter-btn {
+        width: 100%;
+        min-width: 0;
+        border-radius: 0.5rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .app-header {
+        position: static;
+        padding-top: 0;
     }
 }
 

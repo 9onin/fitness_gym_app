@@ -4,14 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Fitness Gym{% endblock %}</title>
+    <meta name="theme-color" content="#4338ca">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Fitness Gym">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="manifest" href="{{ url_for('webmanifest') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-gray-100 flex flex-col {% block body_class %}{% endblock %}">
-    <header class="bg-indigo-700 text-white shadow-md">
+<body class="app-shell min-h-screen bg-gray-100 flex flex-col {% block body_class %}{% endblock %}">
+    {% set endpoint = request.endpoint or '' %}
+    <header class="app-header bg-indigo-700 text-white shadow-md">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div>
                 <a href="{{ url_for('main.index') }}" class="text-xl font-bold">Fitness Gym</a>
@@ -80,6 +88,11 @@
                             <button type="submit" class="block w-full rounded px-3 py-2 text-left hover:bg-indigo-700">Выйти</button>
                         </form>
                     </li>
+                    <li>
+                        <button type="button" class="hidden w-full rounded bg-indigo-900 px-3 py-2 text-left font-semibold hover:bg-indigo-700" data-install-app>
+                            Установить приложение
+                        </button>
+                    </li>
                 {% elif current_user.is_authenticated %}
                     <li><a href="{{ url_for('user.workouts') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Тренировки</a></li>
                     <li><a href="{{ url_for('user.fitness_assistant') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Подбор плана</a></li>
@@ -92,9 +105,19 @@
                             <button type="submit" class="block w-full rounded px-3 py-2 text-left hover:bg-indigo-700">Выйти</button>
                         </form>
                     </li>
+                    <li>
+                        <button type="button" class="hidden w-full rounded bg-indigo-900 px-3 py-2 text-left font-semibold hover:bg-indigo-700" data-install-app>
+                            Установить приложение
+                        </button>
+                    </li>
                 {% else %}
                     <li><a href="{{ url_for('auth.login') }}" class="block rounded px-3 py-2 hover:bg-indigo-700">Вход</a></li>
                     <li><a href="{{ url_for('auth.register') }}" class="block rounded bg-indigo-900 px-3 py-2 hover:bg-indigo-700">Регистрация</a></li>
+                    <li>
+                        <button type="button" class="hidden w-full rounded bg-indigo-900 px-3 py-2 text-left font-semibold hover:bg-indigo-700" data-install-app>
+                            Установить приложение
+                        </button>
+                    </li>
                 {% endif %}
             </ul>
         </nav>
@@ -121,9 +144,64 @@
         {% endif %}
     {% endwith %}
 
-    <main class="container mx-auto px-4 py-6 flex-grow">
+    <main class="app-main container mx-auto px-4 py-6 flex-grow">
         {% block content %}{% endblock %}
     </main>
+
+    <nav class="mobile-tab-bar md:hidden" aria-label="Основная мобильная навигация">
+        {% if current_user.is_authenticated and current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}" class="mobile-tab-item {% if endpoint == 'admin.dashboard' %}is-active{% endif %}" {% if endpoint == 'admin.dashboard' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13h7V4H4v9Zm0 7h7v-5H4v5Zm9 0h7v-9h-7v9Zm0-16v5h7V4h-7Z"/></svg>
+                <span>Панель</span>
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="mobile-tab-item {% if endpoint.startswith('admin.user') %}is-active{% endif %}" {% if endpoint.startswith('admin.user') %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5 1.34 3.5 3 3.5ZM8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.33 0-7 1.2-7 3.6V20h14v-3.4C15 14.2 10.33 13 8 13Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.98 1.97 3.55V20h6v-3.4c0-2.4-4.67-3.6-7-3.6Z"/></svg>
+                <span>Клиенты</span>
+            </a>
+            <a href="{{ url_for('admin.admin_workouts') }}" class="mobile-tab-item {% if endpoint.startswith('admin.admin_workout') %}is-active{% endif %}" {% if endpoint.startswith('admin.admin_workout') %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.6 9.4 18 6.8V4h-2.8l-2.6-2.6a2 2 0 0 0-2.8 0L7.2 4H4v3.2L1.4 9.8a2 2 0 0 0 0 2.8L4 15.2V20h4.8l1 1a2 2 0 0 0 2.8 0l1-1H20v-6.4l.6-.6a2 2 0 0 0 0-2.8ZM8 15.5 6.5 14 14 6.5 15.5 8 8 15.5Zm8 0L8.5 8 10 6.5l7.5 7.5L16 15.5Z"/></svg>
+                <span>Занятия</span>
+            </a>
+            <a href="{{ url_for('analytics.analytics_dashboard') }}" class="mobile-tab-item {% if endpoint.startswith('analytics.') %}is-active{% endif %}" {% if endpoint.startswith('analytics.') %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 9h3v11H5V9Zm5-5h3v16h-3V4Zm5 8h3v8h-3v-8Zm5-5h3v13h-3V7Z"/></svg>
+                <span>Отчеты</span>
+            </a>
+        {% elif current_user.is_authenticated %}
+            <a href="{{ url_for('main.index') }}" class="mobile-tab-item {% if endpoint == 'main.index' %}is-active{% endif %}" {% if endpoint == 'main.index' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 2 11h3v9h6v-6h2v6h6v-9h3L12 3Z"/></svg>
+                <span>Главная</span>
+            </a>
+            <a href="{{ url_for('user.workouts') }}" class="mobile-tab-item {% if endpoint == 'user.workouts' or endpoint == 'user.book_workout' %}is-active{% endif %}" {% if endpoint == 'user.workouts' or endpoint == 'user.book_workout' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.6 9.4 18 6.8V4h-2.8l-2.6-2.6a2 2 0 0 0-2.8 0L7.2 4H4v3.2L1.4 9.8a2 2 0 0 0 0 2.8L4 15.2V20h4.8l1 1a2 2 0 0 0 2.8 0l1-1H20v-6.4l.6-.6a2 2 0 0 0 0-2.8ZM8 15.5 6.5 14 14 6.5 15.5 8 8 15.5Zm8 0L8.5 8 10 6.5l7.5 7.5L16 15.5Z"/></svg>
+                <span>Занятия</span>
+            </a>
+            <a href="{{ url_for('user.schedule') }}" class="mobile-tab-item {% if endpoint == 'user.schedule' %}is-active{% endif %}" {% if endpoint == 'user.schedule' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 2h2v3H7V2Zm8 0h2v3h-2V2ZM4 5h16a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm0 5v10h16V10H4Zm3 2h4v4H7v-4Z"/></svg>
+                <span>План</span>
+            </a>
+            <a href="{{ url_for('user.fitness_assistant') }}" class="mobile-tab-item {% if endpoint == 'user.fitness_assistant' %}is-active{% endif %}" {% if endpoint == 'user.fitness_assistant' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M11 2h2v3h-2V2Zm6.36 2.22 1.42 1.42-2.12 2.12-1.42-1.42 2.12-2.12ZM4.22 5.64l1.42-1.42 2.12 2.12-1.42 1.42-2.12-2.12ZM12 7a5 5 0 0 1 3 9v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2a5 5 0 0 1 3-9Zm-2 15h4v2h-4v-2Z"/></svg>
+                <span>Ассистент</span>
+            </a>
+            <a href="{{ url_for('abonements.my_abonements') }}" class="mobile-tab-item {% if endpoint.startswith('abonements.') %}is-active{% endif %}" {% if endpoint.startswith('abonements.') %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v4a3 3 0 0 0 0 6v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a3 3 0 0 0 0-6V6a2 2 0 0 1 2-2Zm5 3v10h2V7H9Zm4 0v10h2V7h-2Z"/></svg>
+                <span>Абонем.</span>
+            </a>
+        {% else %}
+            <a href="{{ url_for('main.index') }}" class="mobile-tab-item {% if endpoint == 'main.index' %}is-active{% endif %}" {% if endpoint == 'main.index' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 2 11h3v9h6v-6h2v6h6v-9h3L12 3Z"/></svg>
+                <span>Главная</span>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="mobile-tab-item {% if endpoint == 'auth.login' %}is-active{% endif %}" {% if endpoint == 'auth.login' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17v-3H2v-4h8V7l5 5-5 5Zm2-15h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8v-2h8V4h-8V2Z"/></svg>
+                <span>Вход</span>
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="mobile-tab-item {% if endpoint == 'auth.register' %}is-active{% endif %}" {% if endpoint == 'auth.register' %}aria-current="page"{% endif %}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.33 0-10 1.67-10 5v3h14v-3c0-1.47 1.02-2.74 2.45-3.76A18.8 18.8 0 0 0 12 14Zm7 1v3h3v2h-3v3h-2v-3h-3v-2h3v-3h2Z"/></svg>
+                <span>Регистрация</span>
+            </a>
+        {% endif %}
+    </nav>
 
     <footer class="bg-gray-800 text-white py-6">
         <div class="container mx-auto px-4">

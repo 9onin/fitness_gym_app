@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_mail import Message, Mail
 from datetime import datetime, timedelta
-from models.models import User, Workout, Booking
+from models.models import User, Workout, Booking, UserAbonement
 from models.database import db
 import logging
 
@@ -202,3 +202,95 @@ def send_abonement_expiration_notification(user, user_abonement):
     """
 
     return send_email(user.email, subject, template)
+
+
+def build_user_marketing_notifications(user):
+    """
+    Формирует список маркетинговых уведомлений для колокольчика в интерфейсе.
+
+    Args:
+        user (User): Авторизованный пользователь
+
+    Returns:
+        list[dict]: Список уведомлений для отображения в шапке сайта
+    """
+    if not user or not getattr(user, 'is_authenticated', False):
+        return []
+
+    notifications = []
+    now = datetime.utcnow()
+    active_abonement = (
+        UserAbonement.query.filter(
+            UserAbonement.user_id == user.id,
+            UserAbonement.is_active == True,
+            UserAbonement.expiration_date > now,
+        )
+        .order_by(UserAbonement.expiration_date.asc())
+        .first()
+    )
+
+    promo_end = (now + timedelta(days=3)).strftime('%d.%m')
+    notifications.append(
+        {
+            'id': 'test-discount',
+            'tag': 'Тест 20%',
+            'title': 'Тестовое уведомление о скидке',
+            'message': f'Проверьте работу центра уведомлений: до {promo_end} для вас действует тестовая скидка 20% на выбранные абонементы.',
+            'accent': 'indigo',
+        }
+    )
+
+    raffle_deadline = (now + timedelta(days=5)).strftime('%d.%m')
+    notifications.append(
+        {
+            'id': 'raffle-active-members',
+            'tag': 'Розыгрыш',
+            'title': 'Участвуйте в розыгрыше фитнес-набора',
+            'message': f'{user.first_name}, среди активных клиентов мы разыгрываем месяц тренировок и брендированный набор до {raffle_deadline}.',
+            'accent': 'sky',
+        }
+    )
+
+    if active_abonement and active_abonement.days_remaining <= 10:
+        notifications.append(
+            {
+                'id': 'discount-renew-15',
+                'tag': 'Скидка 15%',
+                'title': 'Продлите абонемент на выгодных условиях',
+                'message': f'Ваш текущий абонемент скоро закончится. До конца недели для вас доступна скидка 15% на продление.',
+                'accent': 'indigo',
+            }
+        )
+    else:
+        notifications.append(
+            {
+                'id': 'discount-catalog-10',
+                'tag': 'Скидка 10%',
+                'title': 'Специальное предложение на новые абонементы',
+                'message': 'В этом месяце действует скидка 10% на покупку абонемента с расширенным расписанием и доступом к популярным направлениям.',
+                'accent': 'emerald',
+            }
+        )
+
+    if user.client_status == 'vip':
+        notifications.append(
+            {
+                'id': 'vip-private-raffle',
+                'tag': 'VIP-бонус',
+                'title': 'Закрытый розыгрыш для VIP-клиентов',
+                'message': 'Для вас доступно участие в закрытом розыгрыше персональной тренировки и SPA-восстановления.',
+                'accent': 'amber',
+            }
+        )
+    else:
+        notifications.append(
+            {
+                'id': 'gift-bring-friend',
+                'tag': 'Подарок',
+                'title': 'Приведите друга и получите бонус',
+                'message': 'При покупке абонемента по рекомендации друга вам будет доступен подарочный бонус на следующую покупку.',
+                'accent': 'rose',
+            }
+        )
+
+    return notifications

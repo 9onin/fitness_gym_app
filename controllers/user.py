@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 
 from forms.booking_forms import BookingForm
@@ -12,6 +12,7 @@ from services.intelligence_service import (
     build_fitness_assistant_plan,
 )
 from services.notification_service import send_booking_confirmation
+from services.notification_service import build_user_marketing_notifications
 from services.trainer_balance_service import ensure_trainers_and_balance_workouts
 
 
@@ -255,10 +256,23 @@ def schedule():
 def workouts():
     ensure_trainers_and_balance_workouts()
     workout_type_id = request.args.get('type', type=int)
+    selected_date = (request.args.get('date') or '').strip()
     base_query = Workout.query.filter(Workout.start_time >= datetime.now())
 
     if workout_type_id:
         base_query = base_query.filter(Workout.workout_type_id == workout_type_id)
+
+    if selected_date:
+        try:
+            selected_day = datetime.strptime(selected_date, '%Y-%m-%d')
+            next_day = selected_day + timedelta(days=1)
+            base_query = base_query.filter(
+                Workout.start_time >= selected_day,
+                Workout.start_time < next_day,
+            )
+        except ValueError:
+            flash('Выберите корректную дату для фильтрации тренировок.', 'warning')
+            selected_date = ''
 
     workouts_list = base_query.order_by(Workout.start_time).all()
     workout_types = WorkoutType.query.all()
@@ -269,6 +283,7 @@ def workouts():
         workouts=workouts_list,
         workout_types=workout_types,
         selected_type=workout_type_id,
+        selected_date=selected_date,
     )
 
 
@@ -475,3 +490,16 @@ def check_in(booking_id):
 @login_required
 def my_abonements():
     return redirect(url_for('abonements.my_abonements'))
+
+
+@user_bp.route('/notifications/mark-read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    notification_ids = [
+        item.get('id')
+        for item in build_user_marketing_notifications(current_user)
+        if item.get('id')
+    ]
+    session['read_notification_ids'] = notification_ids
+    session.modified = True
+    return jsonify({'status': 'ok', 'read_count': len(notification_ids), 'unread_count': 0})

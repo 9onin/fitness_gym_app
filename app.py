@@ -1,15 +1,16 @@
 import os
-from flask import Flask, make_response, redirect, render_template, send_from_directory, url_for
-from flask_login import LoginManager
+from flask import Flask, make_response, redirect, render_template, send_from_directory, session, url_for
+from flask_login import LoginManager, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from models.database import db, init_db
 from models.models import User
-from services.notification_service import mail, init_mail
+from services.notification_service import build_user_marketing_notifications, mail, init_mail
 from datetime import datetime
 
 # Загрузка переменных окружения из .env файла
 load_dotenv()
+
 
 def create_app(test_config=None):
     """
@@ -127,8 +128,17 @@ def create_app(test_config=None):
     # Add utility functions for templates
     @app.context_processor
     def utility_processor():
+        header_notifications = build_user_marketing_notifications(current_user)
+        read_ids = set(session.get('read_notification_ids', []))
+        unread_count = sum(
+            1 for item in header_notifications
+            if item.get('id') not in read_ids
+        )
+
         return {
-            'now': datetime.now
+            'now': datetime.now,
+            'header_notifications': header_notifications,
+            'header_unread_notifications': unread_count,
         }
 
     @app.route('/favicon.ico')
@@ -155,6 +165,7 @@ def create_app(test_config=None):
         return response
 
     return app
+
 
 if __name__ == '__main__':
     app = create_app()

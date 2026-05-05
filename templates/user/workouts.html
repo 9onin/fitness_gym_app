@@ -23,16 +23,44 @@
         </section>
 
         <section class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ url_for('user.workouts') }}" class="rounded-full px-4 py-2 text-sm font-semibold transition {% if not selected_type %}bg-indigo-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+            <div class="flex flex-col gap-5">
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ url_for('user.workouts', date=selected_date) if selected_date else url_for('user.workouts') }}" class="rounded-full px-4 py-2 text-sm font-semibold transition {% if not selected_type %}bg-indigo-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
                     Все
-                </a>
-
-                {% for workout_type in workout_types %}
-                    <a href="{{ url_for('user.workouts', type=workout_type.id) }}" class="rounded-full px-4 py-2 text-sm font-semibold transition {% if selected_type == workout_type.id %}bg-indigo-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
-                        {{ workout_type.name }}
                     </a>
-                {% endfor %}
+
+                    {% for workout_type in workout_types %}
+                        <a href="{{ url_for('user.workouts', type=workout_type.id, date=selected_date) if selected_date else url_for('user.workouts', type=workout_type.id) }}" class="rounded-full px-4 py-2 text-sm font-semibold transition {% if selected_type == workout_type.id %}bg-indigo-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                            {{ workout_type.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <form method="get" action="{{ url_for('user.workouts') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    {% if selected_type %}
+                        <input type="hidden" name="type" value="{{ selected_type }}">
+                    {% endif %}
+
+                    <div class="w-full sm:max-w-xs">
+                        <label for="workout-date" class="mb-2 block text-sm font-semibold text-slate-700">Дата тренировки</label>
+                        <input
+                            id="workout-date"
+                            name="date"
+                            type="date"
+                            value="{{ selected_date }}"
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition focus:border-indigo-500"
+                        >
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                            Показать
+                        </button>
+                        <a href="{{ url_for('user.workouts', type=selected_type) if selected_type else url_for('user.workouts') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            Сбросить дату
+                        </a>
+                    </div>
+                </form>
             </div>
         </section>
 

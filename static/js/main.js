@@ -34,8 +34,51 @@ function formatTime(dateString) {
 // Toggle mobile menu
 function toggleMobileMenu() {
     const mobileMenu = document.getElementById('mobile-menu');
+    const toggleButton = document.querySelector('[aria-controls="mobile-menu"]');
     if (mobileMenu) {
         mobileMenu.classList.toggle('hidden');
+        if (toggleButton) {
+            const expanded = !mobileMenu.classList.contains('hidden');
+            toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+    }
+}
+
+function toggleNotifications() {
+    const panel = document.getElementById('header-notifications');
+    const toggleButton = document.querySelector('[aria-controls="header-notifications"]');
+    const badge = document.querySelector('[data-notification-badge]');
+
+    if (!panel) {
+        return;
+    }
+
+    panel.classList.toggle('hidden');
+    const isOpen = !panel.classList.contains('hidden');
+
+    if (toggleButton) {
+        toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    if (isOpen) {
+        fetch('/user/notifications/mark-read', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(function(response) {
+            if (!response.ok) {
+                return null;
+            }
+            return response.json();
+        }).then(function(payload) {
+            if (!payload || !badge) {
+                return;
+            }
+            badge.remove();
+        }).catch(function() {
+            // ignore notification read failures to avoid breaking the panel UX
+        });
     }
 }
 
@@ -162,4 +205,38 @@ document.addEventListener('DOMContentLoaded', function() {
             passwordInput.type = toggle.checked ? 'text' : 'password';
         });
     });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuLinks = document.querySelectorAll('#mobile-menu a, #mobile-menu button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const toggleButton = document.querySelector('[aria-controls="mobile-menu"]');
+
+    mobileMenuLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+            if (!mobileMenu) {
+                return;
+            }
+            mobileMenu.classList.add('hidden');
+            if (toggleButton) {
+                toggleButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+});
+
+document.addEventListener('click', function(event) {
+    const panel = document.getElementById('header-notifications');
+    const toggleButton = document.querySelector('[aria-controls="header-notifications"]');
+
+    if (!panel || !toggleButton || panel.classList.contains('hidden')) {
+        return;
+    }
+
+    if (panel.contains(event.target) || toggleButton.contains(event.target)) {
+        return;
+    }
+
+    panel.classList.add('hidden');
+    toggleButton.setAttribute('aria-expanded', 'false');
 });

@@ -1,6 +1,11 @@
 __pycache__/
 *.py[cod]
 .venv
+.runtime_site/
+flask_run.log
+tools/_pydeps/
+tools/app_deps/
+tools/pptx_deps/
 *.swp
 logs/
 .local-https/
